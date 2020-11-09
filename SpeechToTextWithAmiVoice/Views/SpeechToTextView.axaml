@@ -1,0 +1,80 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:SpeechToTextWithAmiVoice;assembly=SpeechToTextWithAmiVoice"
+             mc:Ignorable="d"
+             x:Class="SpeechToTextWithAmiVoice.Views.SpeechToTextView">
+  <UserControl.Resources>
+    <local:DoubleToDateTimeDeltaStringConverter x:Key="d2dtdConverter" />
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="Border.Main">
+      <Setter Property="Padding" Value="2"/>
+      <Setter Property="Margin" Value="2"/>
+    </Style>
+  </UserControl.Styles>
+  <Border Classes="Main">
+    <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">WebSocket URL</TextBlock>
+        <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+      </DockPanel>
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">API Key</TextBlock>
+        <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+      </DockPanel>
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
+        <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding FriendlyName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Top">
+        <TextBlock Width="100" VerticalAlignment="Center">FilePath</TextBlock>
+        <TextBox Text="{Binding SpeechToTextSettings.OutputTextfilePath}" MinWidth="200"/>
+        <Button DockPanel.Dock="Right" Command="{Binding OnClickFileSelectButtonCommand}">Select</Button>
+      </DockPanel>
+      <StackPanel DockPanel.Dock="Top">
+        <DockPanel>
+          <TextBlock Width="100" VerticalAlignment="Center" DockPanel.Dock="Left">Clearing</TextBlock>
+          <CheckBox Name="OutputClearingCheckbox" IsThreeState="False" IsChecked="{Binding SpeechToTextSettings.OutputClearingIsEnabled}"/>
+        </DockPanel>
+        <DockPanel>
+          <TextBlock Text="{Binding #OutputClearingSecondsSlider.Value, Mode=OneWay, Converter={StaticResource d2dtdConverter}}" Width="100"/>
+          <Slider
+            Name="OutputClearingSecondsSlider"
+            Minimum="0"
+            Maximum="90"
+            Value="{Binding SpeechToTextSettings.OutputClearingSeconds}"
+            IsEnabled="{Binding #OutputClearingCheckbox.IsChecked}"
+            TickFrequency="1.0"
+            LargeChange="5.0"
+            IsSnapToTickEnabled="True"
+        />
+        </DockPanel>
+      </StackPanel>
+      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left">BouyomiChan</TextBlock>
+        <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
+          <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
+          <TextBlock DockPanel.Dock="Right">:</TextBlock>
+          <TextBox Watermark="URI" MinWidth="300" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+        </DockPanel>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Bottom">
+        <Button Content="{Binding RecordButtonText}" Command="{Binding OnClickRecordButtonCommand}"/>
+      </DockPanel>
+      <DockPanel VerticalAlignment="Stretch" DockPanel.Dock="Bottom" >
+        <Border BorderBrush="Black" BorderThickness="2" Margin="2" DockPanel.Dock="Bottom">
+          <TextBlock Text="{Binding StatusText, Mode=OneWay}"/>
+        </Border>
+        <TextBox IsReadOnly="True" TextWrapping="Wrap" Text="{Binding RecognizedText, Mode=OneWay}" VerticalAlignment="Stretch" DockPanel.Dock="Top"/>
+      </DockPanel>
+    </DockPanel>
+  </Border>
+</UserControl>
