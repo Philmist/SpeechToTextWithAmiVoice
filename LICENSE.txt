@@ -30,7 +30,7 @@ Copyright 2020 Philmist
 
 Permission is hereby granted, free of charge,
 to any person obtaining a copy of this software's source file 
-and associated documentation files except that are explicitly released under GPLv3
+and associated documentation files except that are explicitly released under other licences
 (call "the source files of the Software"), to deal without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the source files of the Software,

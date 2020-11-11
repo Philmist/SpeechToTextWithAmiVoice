@@ -23,6 +23,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -37,6 +38,7 @@ namespace SpeechToTextWithAmiVoice
         public readonly WaveFormat TargetWaveFormat;
 
         public event EventHandler<byte[]> ResampledDataAvailable;
+        public event EventHandler<float> ResampledMaxValueAvailable;
 
         public IObservable<byte[]> Pcm16StreamObservable { get; }
 
@@ -52,7 +54,8 @@ namespace SpeechToTextWithAmiVoice
         {
             if (eventArgs.BytesRecorded == 0)
             {
-                ResampledDataAvailable(this, new byte[0]);
+                ResampledDataAvailable?.Invoke(this, new byte[0]);
+                ResampledMaxValueAvailable?.Invoke(this, 0);
                 return;
             }
 
@@ -63,28 +66,39 @@ namespace SpeechToTextWithAmiVoice
                     var sampleStream = new WaveToSampleProvider(inputStream);
                     var resamplingProvider = new WdlResamplingSampleProvider(sampleStream, TargetWaveFormat.SampleRate);
                     var pcmProvider = new SampleToWaveProvider16(resamplingProvider);
-                    IWaveProvider targetProvider;
-                    if (capture.WaveFormat.Channels != 1)
+                    IWaveProvider targetProvider = pcmProvider;
+                    if (capture.WaveFormat.Channels == 2)
                     {
                         var stereoToMonoProvider = new StereoToMonoProvider16(pcmProvider);
                         stereoToMonoProvider.RightVolume = 0.5f;
                         stereoToMonoProvider.LeftVolume = 0.5f;
                         targetProvider = stereoToMonoProvider;
                     }
-                    else
-                    {
-                        targetProvider = pcmProvider;
-                    }
 
                     byte[] buffer = new byte[eventArgs.BytesRecorded];
                     using (var outputStream = new MemoryStream())
                     {
                         int readBytes;
+                        int writeBytes = 0;
                         while ((readBytes = targetProvider.Read(buffer, 0, eventArgs.BytesRecorded)) > 0)
                         {
                             outputStream.Write(buffer, 0, readBytes);
+                            writeBytes += readBytes;
                         }
-                        ResampledDataAvailable(this, outputStream.ToArray());
+                        var aryOutputStream = outputStream.ToArray();
+                        ResampledDataAvailable?.Invoke(this, aryOutputStream);
+
+                        float max = 0;
+                        var tempBuffer = new WaveBuffer(aryOutputStream);
+                        for (int index = 0; index < aryOutputStream.Length / 2; index++)
+                        {
+                            var sample = (double)tempBuffer.ShortBuffer[index];
+                            // absolute value 
+                            if (sample < 0.0) sample = -sample;
+                            // is this the max value?
+                            if (sample > max) max = (float)sample;
+                        }
+                        ResampledMaxValueAvailable?.Invoke(this, max);
                     }
                 }
             }
@@ -102,6 +116,10 @@ namespace SpeechToTextWithAmiVoice
             CaptureTargetDevice = device;
             capture = new WasapiCapture(CaptureTargetDevice);
             capture.ShareMode = AudioClientShareMode.Shared;
+
+            Debug.WriteLine(capture.WaveFormat.Encoding);
+            Debug.WriteLine(capture.WaveFormat.SampleRate);
+            Debug.WriteLine(device.DeviceFriendlyName);
 
             capture.DataAvailable += WaspiDataAvailable;
             Pcm16StreamObservable = Observable.FromEvent<EventHandler<byte[]>, byte[]>(
