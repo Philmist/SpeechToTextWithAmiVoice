@@ -8,5 +8,16 @@
         public string BouyomiChanUri { get; set; }
         public int BouyomiChanPort { get; set; }
         public bool BouyomiChanIsEnabled { get; set; }
+
+        public SpeechToTextSettings() { }
+        public SpeechToTextSettings(SpeechToTextSettings pObj)
+        {
+            OutputTextfilePath = pObj.OutputTextfilePath;
+            OutputClearingIsEnabled = pObj.OutputClearingIsEnabled;
+            OutputClearingSeconds = pObj.OutputClearingSeconds;
+            BouyomiChanUri = pObj.BouyomiChanUri;
+            BouyomiChanPort = pObj.BouyomiChanPort;
+            BouyomiChanIsEnabled = pObj.BouyomiChanIsEnabled;
+        }
     }
 }

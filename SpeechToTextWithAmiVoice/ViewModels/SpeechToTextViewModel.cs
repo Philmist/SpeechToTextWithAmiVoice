@@ -1,9 +1,12 @@
-﻿using NAudio.CoreAudioApi;
+﻿using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using ReactiveUI;
-using SharpDX.Direct3D11;
 using SpeechToTextWithAmiVoice.Models;
+using SpeechToTextWithAmiVoice.Views;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -70,6 +73,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private bool isRecording;
         private IDisposable disposableWaveInObservable;
         private IDisposable disposableWaveMaxObservable;
+        private IDisposable disposableRecognizerErrorObservable;
+        private IDisposable disposableRecognizerRecognizeObservable;
+        private IDisposable disposableRecognizerStopped;
 
         private CaptureVoiceFromWasapi captureVoice;
 
@@ -92,7 +98,6 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             OnClickRecordButtonCommand = StopRecordingCommand;
         }
 
-        private WaveFileWriter waveFileWriter;
         private VoiceRecognizerWithAmiVoiceCloud voiceRecognizer;
         private CancellationTokenSource tokenSource;
 
@@ -115,15 +120,22 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
             disposableWaveInObservable = null;
 
-            OnClickFileSelectButtonCommand = ReactiveCommand.Create(() =>
+
+            OnClickFileSelectButtonCommand = ReactiveCommand.CreateFromTask(async () =>
             {
-                var text = String.Format("Selected Device: {0}\nAppKey: {1}", SelectedWaveInDevice.FriendlyName, amiVoiceAPI.AppKey);
-                RecognizedText = text;
-                captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
+                var fileDialog = new SaveFileDialog();
+                fileDialog.DefaultExtension = ".txt";
+                var mainWindow = (App.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+                var fileStr = await fileDialog.ShowAsync(mainWindow);
+                var afterObj = new SpeechToTextSettings(SpeechToTextSettings);
+                afterObj.OutputTextfilePath = fileStr;
+                SpeechToTextSettings = afterObj;
             });
 
-            StartRecordingCommand = ReactiveCommand.CreateFromTask(async () =>
+            StartRecordingCommand = ReactiveCommand.Create(() =>
             {
+                tokenSource = new CancellationTokenSource();
+
                 if (isRecording == true)
                 {
                     changeButtonToStopRecording();
@@ -144,37 +156,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     return;
                 }
 
-                /*
-                try
-                {
-                    var connectionResult = await voiceRecognizer.Connect(CancellationToken.None);
-                    if (connectionResult.isSuccess != true)
-                    {
-                        throw new Exception(connectionResult.message);
-                    }
-                    Debug.WriteLine(connectionResult.message);
-                    RecognizedText = String.Format("Connect: {0}", connectionResult.message);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                    RecognizedText = ex.Message;
-                    changeButtonToStartRecording();
-                    return;
-                }
-                */
-
                 captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
+                Debug.WriteLine(captureVoice);
 
-                /*
-                waveFileWriter = new WaveFileWriter("test.wav", captureVoice.TargetWaveFormat);
-                Debug.WriteLine(captureVoice.TargetWaveFormat.ToString());
-                disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe((b) =>
-                {
-                    // Debug.WriteLine(String.Format("Subscribed Data Coming: {0}", b.Length));
-                    waveFileWriter.Write(b);
-                });
-                */
                 disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
                     h => (s, e) => h(e),
                     h => captureVoice.ResampledMaxValueAvailable += h,
@@ -183,9 +167,85 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 captureVoice.StartRecording();
                 changeButtonToStopRecording();
                 isRecording = true;
+
+                try
+                {
+                    var ct = tokenSource.Token;
+
+                    disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
+                        (b) =>
+                        {
+                            voiceRecognizer?.FeedRawWave(b);
+                        }
+                        );
+
+                    var completeObservable = Observable.FromEvent<EventHandler<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>, VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>(
+                        h => (s, e) => h(e),
+                        h =>
+                        {
+                            voiceRecognizer.Recognized += h;
+                        },
+                        h =>
+                        {
+                            voiceRecognizer.Recognized -= h;
+                        }
+                        );
+                    var progressObservable = Observable.FromEvent<EventHandler<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>, VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>(
+                        h => (s, e) => h(e),
+                        h =>
+                        {
+                            voiceRecognizer.Recognizing += h;
+                        },
+                        h =>
+                        {
+                            voiceRecognizer.Recognizing -= h;
+                        }
+                        );
+                    var observables = new List<IObservable<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>> { completeObservable };
+                    disposableRecognizerRecognizeObservable = Observable.Concat(observables)
+                    .Subscribe(r =>
+                    {
+                        Debug.WriteLine(r.Text);
+                        if (String.IsNullOrEmpty(r.code))  // エラーがないならコードは空文字列
+                        {
+                            RecognizedText = r.Text;
+                        }
+                    });
+
+                    disposableRecognizerErrorObservable = Observable.FromEvent<EventHandler<string>, string>(
+                        h => (s, e) => h(e),
+                        h => { voiceRecognizer.ErrorOccured += h; },
+                        h => { voiceRecognizer.ErrorOccured -= h; }
+                        )
+                    .Subscribe(err =>
+                    {
+                        StatusText = err;
+                    });
+
+                    disposableRecognizerStopped = Observable.FromEvent<EventHandler<bool>, bool>(
+                        h => (s, e) => h(e),
+                        h => { voiceRecognizer.RecognizeStopped += h; },
+                        h => { voiceRecognizer.RecognizeStopped += h; }
+                        )
+                    .Subscribe((r) =>
+                    {
+                        this.StopRecordingCommand.Execute().Subscribe();
+                    });
+
+                    voiceRecognizer.Start(ct);
+                    StatusText = "Start";
+                }
+                catch (Exception ex)
+                {
+                    disposableWaveInObservable?.Dispose();
+                    disposableRecognizerErrorObservable?.Dispose();
+                    disposableRecognizerRecognizeObservable?.Dispose();
+                    Debug.WriteLine(ex.Message);
+                    throw;
+                }
             });
 
-            StopRecordingCommand = ReactiveCommand.CreateFromTask(async () =>
+            StopRecordingCommand = ReactiveCommand.Create(() =>
             {
                 if (isRecording == false)
                 {
@@ -195,11 +255,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 try
                 {
-                    /*
-                    var result = await voiceRecognizer.Disconnect(CancellationToken.None);
-                    Debug.WriteLine(result.message);
-                    RecognizedText = String.Format("message: {0}", result.message);
-                    */
+                    tokenSource.Cancel();
                 }
                 catch (Exception)
                 {
@@ -207,20 +263,16 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 }
                 finally
                 {
-                    /*
                     disposableWaveInObservable?.Dispose();
-                    */
-                    /*
-                    waveFileWriter?.Dispose();
-                    */
                     disposableWaveMaxObservable?.Dispose();
+                    disposableRecognizerRecognizeObservable?.Dispose();
+                    disposableRecognizerErrorObservable?.Dispose();
+                    disposableRecognizerStopped?.Dispose();
 
                     captureVoice.StopRecording();
 
-                    captureVoice = null;
                     changeButtonToStartRecording();
                     isRecording = false;
-                    StatusText = "Stopped";
                     WaveMaxValue = 0;
 
                 }

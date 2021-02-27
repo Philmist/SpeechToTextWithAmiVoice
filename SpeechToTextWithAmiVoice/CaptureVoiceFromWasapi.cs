@@ -76,30 +76,29 @@ namespace SpeechToTextWithAmiVoice
                     }
 
                     byte[] buffer = new byte[eventArgs.BytesRecorded];
-                    using (var outputStream = new MemoryStream())
-                    {
-                        int readBytes;
-                        int writeBytes = 0;
-                        while ((readBytes = targetProvider.Read(buffer, 0, eventArgs.BytesRecorded)) > 0)
-                        {
-                            outputStream.Write(buffer, 0, readBytes);
-                            writeBytes += readBytes;
-                        }
-                        var aryOutputStream = outputStream.ToArray();
-                        ResampledDataAvailable?.Invoke(this, aryOutputStream);
 
-                        float max = 0;
-                        var tempBuffer = new WaveBuffer(aryOutputStream);
-                        for (int index = 0; index < aryOutputStream.Length / 2; index++)
-                        {
-                            var sample = (double)tempBuffer.ShortBuffer[index];
-                            // absolute value 
-                            if (sample < 0.0) sample = -sample;
-                            // is this the max value?
-                            if (sample > max) max = (float)sample;
-                        }
-                        ResampledMaxValueAvailable?.Invoke(this, max);
+                    var outputStream = new MemoryStream();
+                    int readBytes;
+                    int writeBytes = 0;
+                    while ((readBytes = targetProvider.Read(buffer, 0, eventArgs.BytesRecorded)) > 0)
+                    {
+                        outputStream.Write(buffer, 0, readBytes);
+                        writeBytes += readBytes;
                     }
+                    var aryOutputStream = outputStream.ToArray();
+                    ResampledDataAvailable?.Invoke(this, aryOutputStream);
+
+                    float max = 0;
+                    var tempBuffer = new WaveBuffer(aryOutputStream);
+                    for (int index = 0; index < aryOutputStream.Length / 2; index++)
+                    {
+                        var sample = (double)tempBuffer.ShortBuffer[index];
+                        // absolute value 
+                        if (sample < 0.0) sample = -sample;
+                        // is this the max value?
+                        if (sample > max) max = (float)sample;
+                    }
+                    ResampledMaxValueAvailable?.Invoke(this, max);
                 }
             }
         }
