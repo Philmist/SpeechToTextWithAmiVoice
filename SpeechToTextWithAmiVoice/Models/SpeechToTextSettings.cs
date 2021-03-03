@@ -5,8 +5,8 @@
         public string OutputTextfilePath { get; set; }
         public bool OutputClearingIsEnabled { get; set; }
         public double OutputClearingSeconds { get; set; }
-        public string BouyomiChanUri { get; set; }
-        public int BouyomiChanPort { get; set; }
+        public string BouyomiChanUri { get; set; } = "127.0.0.1";
+        public int BouyomiChanPort { get; set; } = 50001;
         public bool BouyomiChanIsEnabled { get; set; }
 
         public SpeechToTextSettings() { }

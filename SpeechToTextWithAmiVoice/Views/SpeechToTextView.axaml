@@ -13,6 +13,9 @@
       <Setter Property="Padding" Value="2"/>
       <Setter Property="Margin" Value="2"/>
     </Style>
+    <Style Selector="TextBox">
+      <Setter Property="FontFamily" Value="Meiryo, GlobalUserInterface.CompositeFont" />
+    </Style>
   </UserControl.Styles>
   <Border Classes="Main">
     <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">

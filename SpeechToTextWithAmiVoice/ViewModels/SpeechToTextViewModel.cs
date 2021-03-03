@@ -100,6 +100,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
         private VoiceRecognizerWithAmiVoiceCloud voiceRecognizer;
         private CancellationTokenSource tokenSource;
+        private BouyomiChanSender bouyomiChan;
+        private RecognizedTextToFileWriter fileWriter;
 
         public SpeechToTextViewModel()
         {
@@ -157,7 +159,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 }
 
                 captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
-                Debug.WriteLine(captureVoice);
+
+                bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort);
+                fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
 
                 disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
                     h => (s, e) => h(e),
@@ -209,6 +213,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                         if (String.IsNullOrEmpty(r.code))  // エラーがないならコードは空文字列
                         {
                             RecognizedText = r.Text;
+                            _ = bouyomiChan.Send(r.Text);
+                            _ = fileWriter.Write(r.Text);
                         }
                     });
 
@@ -220,6 +226,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     .Subscribe(err =>
                     {
                         StatusText = err;
+                        this.StopRecordingCommand.Execute().Subscribe();
                     });
 
                     disposableRecognizerStopped = Observable.FromEvent<EventHandler<bool>, bool>(
@@ -256,6 +263,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 try
                 {
                     tokenSource.Cancel();
+                    voiceRecognizer?.messageLoopTask.Wait(5000);
                 }
                 catch (Exception)
                 {
