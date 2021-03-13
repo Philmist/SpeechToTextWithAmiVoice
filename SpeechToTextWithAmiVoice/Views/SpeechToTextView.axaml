@@ -28,6 +28,10 @@
         <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Profile ID</TextBlock>
+        <TextBox Text="{Binding AmiVoiceAPI.ProfileId, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+      </DockPanel>
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
         <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}">
           <ComboBox.ItemTemplate>
@@ -42,6 +46,7 @@
         <TextBox Text="{Binding SpeechToTextSettings.OutputTextfilePath}" MinWidth="200"/>
         <Button DockPanel.Dock="Right" Command="{Binding OnClickFileSelectButtonCommand}">Select</Button>
       </DockPanel>
+      <!--
       <StackPanel DockPanel.Dock="Top">
         <DockPanel>
           <TextBlock Width="100" VerticalAlignment="Center" DockPanel.Dock="Left">Clearing</TextBlock>
@@ -61,12 +66,19 @@
         />
         </DockPanel>
       </StackPanel>
+      -->
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left">BouyomiChan</TextBlock>
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
           <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
           <TextBlock DockPanel.Dock="Right">:</TextBlock>
-          <TextBox Watermark="URI" MinWidth="300" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+          <TextBox Watermark="Address" MinWidth="300" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+        </DockPanel>
+      </DockPanel>
+      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left">TextSend Uri</TextBlock>
+        <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
+          <TextBox Watermark="HTTP URI" MinWidth="300" Text="{Binding TextOutputUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
         </DockPanel>
       </DockPanel>
       <DockPanel DockPanel.Dock="Bottom">

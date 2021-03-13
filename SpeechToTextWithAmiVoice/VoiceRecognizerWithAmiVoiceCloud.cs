@@ -144,11 +144,6 @@ namespace SpeechToTextWithAmiVoice
 
             connectionParameter = new Dictionary<string, string>();
 
-            // AmiVoice CloudはおそらくPingパケットを投げられると切断する仕様なので
-            // Keep-Aliveを無効にする
-            Debug.WriteLine(String.Format("Default Keep-Alive: {0}", wsAmiVoice.Options.KeepAliveInterval));
-            wsAmiVoice.Options.KeepAliveInterval = TimeSpan.Zero;
-
             ProvidingState = ProvidingStateType.Initialized;
             DetectingState = DetectingStateType.NotDetecting;
             RecognizingState = RecognizingStateType.NotRecognizing;
@@ -249,6 +244,13 @@ namespace SpeechToTextWithAmiVoice
         /// <returns>自身を表わしたTask</returns>
         private async Task<ConnectionResult> Connect(CancellationToken ct)
         {
+            wsAmiVoice?.Dispose();
+            wsAmiVoice = new ClientWebSocket();
+            // AmiVoice CloudはおそらくPingパケットを投げられると切断する仕様なので
+            // Keep-Aliveを無効にする
+            Debug.WriteLine(String.Format("Default Keep-Alive: {0}", wsAmiVoice.Options.KeepAliveInterval));
+            wsAmiVoice.Options.KeepAliveInterval = TimeSpan.Zero;
+
             // AppKeyに対応する辞書エントリを作る
             var parameter = new Dictionary<string, string>(connectionParameter);
             parameter["authorization"] = this.AppKey;
@@ -385,6 +387,8 @@ namespace SpeechToTextWithAmiVoice
 
         public event EventHandler<bool>? RecognizeStopped;
 
+        public event EventHandler<string>? Trace;
+
         public string LastErrorString { get; protected set; } = "";
 
         private ConcurrentQueue<byte[]> sendQueue;
@@ -396,33 +400,41 @@ namespace SpeechToTextWithAmiVoice
             var buffer = new byte[4096];
             while (!ct.IsCancellationRequested && wsAmiVoice.State == WebSocketState.Open)
             {
-                ArraySegment<byte> vs = new ArraySegment<byte>(buffer);
-                var result = await wsAmiVoice.ReceiveAsync(vs, ct);
-                if (result.Count == 0)
+                try
                 {
-                    continue;
+                    ArraySegment<byte> vs = new ArraySegment<byte>(buffer);
+                    var result = await wsAmiVoice.ReceiveAsync(vs, ct);
+                    if (result.Count == 0)
+                    {
+                        continue;
+                    }
+                    response.AddRange(vs.Take(result.Count));
+                    if (!result.EndOfMessage)
+                    {
+                        continue;
+                    }
+                    var textArray = response.ToArray();
+                    var resultText = System.Text.Encoding.UTF8.GetString(textArray);
+                    receiveQueue.Enqueue(resultText);
+                    response.Clear();
                 }
-                response.AddRange(vs.Take(result.Count));
-                if (!result.EndOfMessage)
+                catch (WebSocketException ex)
                 {
-                    continue;
+                    Debug.WriteLine(String.Format("Recieve:WebSocketException: {0}", ex.Message));
+                    break;
                 }
-                var textArray = response.ToArray();
-                var resultText = System.Text.Encoding.UTF8.GetString(textArray);
-                receiveQueue.Enqueue(resultText);
-                response.Clear();
             }
 
-            if (wsAmiVoice.State == WebSocketState.CloseReceived)
+            if (wsAmiVoice.State == WebSocketState.CloseReceived || wsAmiVoice.State == WebSocketState.Open)
             {
-                Debug.WriteLine("Close Received");
+                Debug.WriteLine("Receive will be closed.");
                 try
                 {
                     await wsAmiVoice.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
                 }
                 catch (WebSocketException ex)
                 {
-                    Debug.WriteLine(String.Format("WebSocketException: {0}", ex.Message));
+                    Debug.WriteLine(String.Format("ReceiveClose:WebSocketException: {0}", ex.Message));
                 }
             }
         }
@@ -435,31 +447,68 @@ namespace SpeechToTextWithAmiVoice
 
             try
             {
-                var connectionResult = await Connect(ct);
-                if (connectionResult.isSuccess == false)
+                Func<Task<bool>> connectAction = async () =>
                 {
-                    LastErrorString = connectionResult.message;
-                    ErrorOccured?.Invoke(this, LastErrorString);
-                    return;
-                }
+                    var connectionResult = await Connect(ct);
+                    if (connectionResult.isSuccess == false)
+                    {
+                        LastErrorString = connectionResult.message;
+                        ErrorOccured?.Invoke(this, LastErrorString);
+                        return false;
+                    }
+                    Trace?.Invoke(this, "Connection complete.");
+                    return true;
+                };
 
                 sendQueue.Clear();
 
-                var receiveTokenSource = new CancellationTokenSource();
-                var receiveToken = receiveTokenSource.Token;
-                var receiveTask = Task.Run(() => ReceiveLoop(receiveToken), receiveToken);
+                CancellationTokenSource receiveTokenSource = new CancellationTokenSource();
+                CancellationToken receiveToken = receiveTokenSource.Token;
+                Task? receiveTask = null;
 
                 char[] charsToTrim = { ' ', '\x00' };
                 while (!ct.IsCancellationRequested)
                 {
+                    if (ProvidingState == ProvidingStateType.Initialized || (receiveTask != null && receiveTask.Status == TaskStatus.RanToCompletion))
+                    {
+                        if (receiveTask != null && receiveTask.Status == TaskStatus.Running)
+                        {
+                            receiveTokenSource?.Cancel();
+                            await receiveTask;
+                        }
+
+                        var connectResult = await connectAction();
+                        if (!connectResult)
+                        {
+                            break;
+                        }
+
+                        receiveTask?.Dispose();
+                        receiveTokenSource = new CancellationTokenSource();
+                        receiveToken = receiveTokenSource.Token;
+                        receiveTask = Task.Run(() => ReceiveLoop(receiveToken), receiveToken);
+                    }
+
                     string receiveData;
                     if (receiveQueue.TryDequeue(out receiveData))
                     {
                         receiveData = receiveData.Trim(charsToTrim);
                         //Debug.WriteLine(String.Format("Recieve: {0}", receiveData));
 
+                        // セッションタイムアウト等による切断
+                        // 実際は強制的に切断されていたりするのでここを通らなかったりする
+                        if (receiveData.StartsWith("p") && receiveData.Length > 3)
+                        {
+                            Debug.WriteLine("Timeout occured.");
+                            Trace?.Invoke(this, receiveData.Substring(1).Trim());
+                            RecognizingState = RecognizingStateType.NotRecognizing;
+                            DetectingState = DetectingStateType.NotDetecting;
+                            ProvidingState = ProvidingStateType.Initialized;
+                            continue;
+                        }
+
                         // エラー処理
-                        if (receiveData.StartsWith("p") || (receiveData.StartsWith("e") && receiveData.Length > 3))
+                        if ((receiveData.StartsWith("e") && receiveData.Length > 3))
                         {
                             LastErrorString = receiveData;
                             ErrorOccured?.Invoke(this, receiveData.Substring(1));
@@ -527,36 +576,39 @@ namespace SpeechToTextWithAmiVoice
                     }
 
                     // 受信が異常終了していないか確認
-                    if (receiveTask.Status == TaskStatus.Faulted)
+                    if (receiveTask != null && receiveTask.Status == TaskStatus.Faulted)
                     {
-                        Debug.WriteLine(String.Format("WSException: {0}", receiveTask.Exception.InnerException.Message));
+                        Debug.WriteLine(String.Format("Loop:ReceiveWSException: {0}", receiveTask.Exception.InnerException.Message));
                         ErrorOccured?.Invoke(this, String.Format("ReceiveTaskException"));
-                        break;
-                    }
-
-                    if (receiveTask.Status == TaskStatus.RanToCompletion)
-                    {
                         break;
                     }
 
                     // 音声データを送る
                     byte[] sendData;
-                    if (sendQueue.TryDequeue(out sendData))
+                    if (wsAmiVoice.State == WebSocketState.Open && sendQueue.TryDequeue(out sendData))
                     {
                         sendData = prefixC.Concat(sendData).ToArray();
                         if (sendData.Length == 0)
                         {
                             continue;
                         }
-                        await wsAmiVoice.SendAsync(sendData, WebSocketMessageType.Binary, true, CancellationToken.None);
+                        try
+                        {
+                            await wsAmiVoice.SendAsync(sendData, WebSocketMessageType.Binary, true, CancellationToken.None);
+                        }
+                        catch (Exception ex) when (ex is WebSocketException || ex is IOException)
+                        {
+                            var sendErrString = String.Format("Send:WebSocketException: {0}", ex.Message);
+                            Trace?.Invoke(this, sendErrString);
+                        }
                     }
                 }
 
                 // 終了処理
                 byte[] endArray = new byte[] { (byte)CommandType.End };
                 await wsAmiVoice.SendAsync(endArray, WebSocketMessageType.Text, true, CancellationToken.None);
-                string disconnectionStr;
-                while (wsAmiVoice.State == WebSocketState.Open && receiveTask.Status == TaskStatus.Running)
+                string disconnectionStr = "";
+                while (wsAmiVoice.State == WebSocketState.Open && receiveTask != null && receiveTask.Status == TaskStatus.Running)
                 {
                     if (!receiveQueue.TryDequeue(out disconnectionStr))
                     {
@@ -565,9 +617,8 @@ namespace SpeechToTextWithAmiVoice
 
                     if (disconnectionStr.StartsWith("e") && disconnectionStr.Length == 1)
                     {
-                        receiveTokenSource.Cancel();
+                        receiveTokenSource?.Cancel();
                         receiveTask.Wait(1000);
-                        await wsAmiVoice.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
                         ProvidingState = ProvidingStateType.Initialized;
                         RecognizingState = RecognizingStateType.NotRecognizing;
                         DetectingState = DetectingStateType.NotDetecting;
@@ -583,14 +634,18 @@ namespace SpeechToTextWithAmiVoice
                     }
                 }
 
-                if (!receiveTokenSource.IsCancellationRequested)
+                if (receiveTokenSource != null && !receiveTokenSource.IsCancellationRequested)
                 {
                     receiveTokenSource.Cancel();
+                    if (receiveTask != null && receiveTask.Status == TaskStatus.Running)
+                    {
+                        receiveTask.Wait(3000);
+                    }
                 }
             }
             catch (WebSocketException ex)
             {
-                ErrorOccured?.Invoke(this, String.Format("WebSocketException: {0}", ex.Message));
+                ErrorOccured?.Invoke(this, String.Format("Loop:WebSocketException: {0}", ex.Message));
             }
             finally
             {
@@ -602,10 +657,12 @@ namespace SpeechToTextWithAmiVoice
                     }
                     catch (WebSocketException ex)
                     {
-                        Debug.WriteLine(String.Format("WebSocketException: {0} - {1}", ex.Message, wsAmiVoice.State.ToString()));
+                        Debug.WriteLine(String.Format("Close:WebSocketException: {0} - {1}", ex.Message, wsAmiVoice.State.ToString()));
                     }
                 }
             }
+
+            Trace?.Invoke(this, "Disconnected.");
         }
 
         public Task? messageLoopTask { get; protected set; }

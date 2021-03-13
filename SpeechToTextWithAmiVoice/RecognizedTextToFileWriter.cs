@@ -23,6 +23,12 @@ namespace SpeechToTextWithAmiVoice
                 return false;
             }
 
+            if (String.IsNullOrWhiteSpace(FilePath))
+            {
+                isEnable = false;
+                return false;
+            }
+
             try
             {
                 File.WriteAllText(FilePath, message, Encoding.UTF8);

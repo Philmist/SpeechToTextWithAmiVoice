@@ -61,6 +61,13 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref waveMaxValue, value);
         }
 
+        private string textOutputUri;
+        public string TextOutputUri
+        {
+            get => textOutputUri;
+            set => this.RaiseAndSetIfChanged(ref textOutputUri, value);
+        }
+
         public ReactiveCommand<Unit, Unit> OnClickFileSelectButtonCommand { get; }
         public ReactiveCommand<Unit, Unit> OnClickRecordButtonCommand
         {
@@ -76,6 +83,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private IDisposable disposableRecognizerErrorObservable;
         private IDisposable disposableRecognizerRecognizeObservable;
         private IDisposable disposableRecognizerStopped;
+        private IDisposable disposableTraceObservable;
 
         private CaptureVoiceFromWasapi captureVoice;
 
@@ -102,6 +110,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private CancellationTokenSource tokenSource;
         private BouyomiChanSender bouyomiChan;
         private RecognizedTextToFileWriter fileWriter;
+        private TextHttpSender textSender;
 
         public SpeechToTextViewModel()
         {
@@ -109,6 +118,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
             StatusText = "Status";
             RecognizedText = "";
+            TextOutputUri = "";
 
             SpeechToTextSettings = new SpeechToTextSettings();
             SpeechToTextSettings.OutputClearingIsEnabled = true;
@@ -148,7 +158,10 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 {
 
                     voiceRecognizer = new VoiceRecognizerWithAmiVoiceCloud(amiVoiceAPI.WebSocketURI.Trim(), amiVoiceAPI.AppKey.Trim());
-
+                    if (!String.IsNullOrWhiteSpace(amiVoiceAPI.ProfileId))
+                    {
+                        voiceRecognizer.ConnectionParameter.Add("profileId", amiVoiceAPI.ProfileId.Trim());
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -162,6 +175,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort);
                 fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
+                textSender = new TextHttpSender(TextOutputUri);
 
                 disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
                     h => (s, e) => h(e),
@@ -215,8 +229,28 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                             RecognizedText = r.Text;
                             _ = bouyomiChan.Send(r.Text);
                             _ = fileWriter.Write(r.Text);
+                            var textJson = new TextHttpSender.RecognizedText { text = r.Text };
+                            _ = textSender.Send(textJson);
                         }
                     });
+
+                    disposableTraceObservable = Observable.FromEvent<EventHandler<string>, string>(
+                        h => (s, e) => h(e),
+                        h =>
+                        {
+                            voiceRecognizer.Trace += h;
+                        },
+                        h =>
+                        {
+                            voiceRecognizer.Trace -= h;
+                        }
+                        ).Subscribe(r => {
+                            Debug.WriteLine(r);
+                            if (!String.IsNullOrEmpty(r))
+                            {
+                                StatusText = r.Trim();
+                            }
+                        });
 
                     disposableRecognizerErrorObservable = Observable.FromEvent<EventHandler<string>, string>(
                         h => (s, e) => h(e),
@@ -276,6 +310,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableRecognizerRecognizeObservable?.Dispose();
                     disposableRecognizerErrorObservable?.Dispose();
                     disposableRecognizerStopped?.Dispose();
+                    disposableTraceObservable?.Dispose();
 
                     captureVoice.StopRecording();
 
