@@ -61,6 +61,13 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref waveMaxValue, value);
         }
 
+        private string waveGaugeColor;
+        public string WaveGaugeColor
+        {
+            get => waveGaugeColor;
+            set => this.RaiseAndSetIfChanged(ref waveGaugeColor, value);
+        }
+
         private string textOutputUri;
         public string TextOutputUri
         {
@@ -112,6 +119,21 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private RecognizedTextToFileWriter fileWriter;
         private TextHttpSender textSender;
 
+        private void changeGaugeColorOn(object sender, uint v)
+        {
+            WaveGaugeColor = "Green";
+        }
+
+        private void changeGaugeColorOff(object sender, uint v)
+        {
+            WaveGaugeColor = "Blue";
+        }
+
+        private void changeGaugeColorDisable()
+        {
+            WaveGaugeColor = "Gray";
+        }
+
         public SpeechToTextViewModel()
         {
             AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "", AppKey = "" };
@@ -124,6 +146,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             SpeechToTextSettings.OutputClearingIsEnabled = true;
             SpeechToTextSettings.OutputClearingSeconds = 0;
             SpeechToTextSettings.OutputTextfilePath = "";
+
+            WaveGaugeColor = "Gray";
 
             var deviceEnum = new MMDeviceEnumerator();
             var devices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
@@ -189,6 +213,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 try
                 {
                     var ct = tokenSource.Token;
+
+                    voiceRecognizer.VoiceStart += changeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd += changeGaugeColorOff;
 
                     disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
                         (b) =>
@@ -281,6 +308,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableWaveInObservable?.Dispose();
                     disposableRecognizerErrorObservable?.Dispose();
                     disposableRecognizerRecognizeObservable?.Dispose();
+                    voiceRecognizer.VoiceStart -= changeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd -= changeGaugeColorOff;
                     Debug.WriteLine(ex.Message);
                     throw;
                 }
@@ -312,7 +341,12 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableRecognizerStopped?.Dispose();
                     disposableTraceObservable?.Dispose();
 
+                    voiceRecognizer.VoiceStart -= changeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd -= changeGaugeColorOff;
+
                     captureVoice.StopRecording();
+
+                    changeGaugeColorDisable();
 
                     changeButtonToStartRecording();
                     isRecording = false;

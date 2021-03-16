@@ -471,6 +471,7 @@ namespace SpeechToTextWithAmiVoice
                 {
                     if (ProvidingState == ProvidingStateType.Initialized || (receiveTask != null && receiveTask.Status == TaskStatus.RanToCompletion))
                     {
+                        Trace?.Invoke(this, "Try to connect.");
                         if (receiveTask != null && receiveTask.Status == TaskStatus.Running)
                         {
                             receiveTokenSource?.Cancel();
