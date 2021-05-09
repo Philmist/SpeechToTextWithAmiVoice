@@ -254,7 +254,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                         if (String.IsNullOrEmpty(r.code))  // エラーがないならコードは空文字列
                         {
                             RecognizedText = r.Text;
-                            _ = bouyomiChan.Send(r.Text);
+                            _ = bouyomiChan.Send(speechToTextSettings.BouyomiChanPrefix + r.Text);
                             _ = fileWriter.Write(r.Text);
                             var textJson = new TextHttpSender.RecognizedText { text = r.Text };
                             _ = textSender.Send(textJson);

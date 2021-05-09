@@ -72,7 +72,8 @@
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
           <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
           <TextBlock DockPanel.Dock="Right">:</TextBlock>
-          <TextBox Watermark="Address" MinWidth="300" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+          <TextBox Watermark="Prefix" MinWidth="100" Text="{Binding SpeechToTextSettings.BouyomiChanPrefix}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" />
+          <TextBox Watermark="Address" MinWidth="200" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
         </DockPanel>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
@@ -91,7 +92,11 @@
         <Border BorderBrush="Black" BorderThickness="2" Margin="2" DockPanel.Dock="Bottom">
           <TextBlock Text="{Binding StatusText, Mode=OneWay}"/>
         </Border>
-        <TextBox IsReadOnly="True" TextWrapping="Wrap" Text="{Binding RecognizedText, Mode=OneWay}" VerticalAlignment="Stretch" DockPanel.Dock="Top"/>
+        <Border BorderBrush="Black" BorderThickness="1" Margin="2" DockPanel.Dock="Top">
+          <local:ViewboxEx Stretch="Uniform">
+            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap"/>
+          </local:ViewboxEx>
+        </Border>
       </DockPanel>
     </DockPanel>
   </Border>
