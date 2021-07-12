@@ -32,6 +32,10 @@
         <TextBox Text="{Binding AmiVoiceAPI.ProfileId, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Filler Enable</TextBlock>
+        <CheckBox IsChecked="{Binding AmiVoiceAPI.FillerEnable, Mode=TwoWay}" IsThreeState="False" />
+      </DockPanel>
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
         <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}">
           <ComboBox.ItemTemplate>

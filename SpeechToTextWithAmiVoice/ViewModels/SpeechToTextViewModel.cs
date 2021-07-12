@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
@@ -134,9 +135,11 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             WaveGaugeColor = "Gray";
         }
 
+        private const string fillerPattern = @"%(.+)%";
+
         public SpeechToTextViewModel()
         {
-            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "", AppKey = "" };
+            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "", AppKey = "", FillerEnable = false };
 
             StatusText = "Status";
             RecognizedText = "";
@@ -185,6 +188,10 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     if (!String.IsNullOrWhiteSpace(amiVoiceAPI.ProfileId))
                     {
                         voiceRecognizer.ConnectionParameter.Add("profileId", amiVoiceAPI.ProfileId.Trim());
+                    }
+                    if (amiVoiceAPI.FillerEnable)
+                    {
+                        voiceRecognizer.ConnectionParameter.Add("keepFillerToken", "1");
                     }
                 }
                 catch (Exception ex)
@@ -253,10 +260,15 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                         Debug.WriteLine(r.Text);
                         if (String.IsNullOrEmpty(r.code))  // エラーがないならコードは空文字列
                         {
-                            RecognizedText = r.Text;
-                            _ = bouyomiChan.Send(speechToTextSettings.BouyomiChanPrefix + r.Text);
-                            _ = fileWriter.Write(r.Text);
-                            var textJson = new TextHttpSender.RecognizedText { text = r.Text };
+                            var text = r.Text;
+                            if (amiVoiceAPI.FillerEnable)
+                            {
+                                text = Regex.Replace(text, fillerPattern, @"$1");
+                            }
+                            RecognizedText = text;
+                            _ = bouyomiChan.Send((speechToTextSettings.BouyomiChanPrefix + text).Trim());
+                            _ = fileWriter.Write(text);
+                            var textJson = new TextHttpSender.RecognizedText { text = text };
                             _ = textSender.Send(textJson);
                         }
                     });
@@ -300,6 +312,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                         this.StopRecordingCommand.Execute().Subscribe();
                     });
 
+                    SpeechToTextSettings.BouyomiChanPrefix = SpeechToTextSettings.BouyomiChanPrefix.Trim();
                     voiceRecognizer.Start(ct);
                     StatusText = "Start";
                 }
