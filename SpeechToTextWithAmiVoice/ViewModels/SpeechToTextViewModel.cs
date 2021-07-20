@@ -135,7 +135,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             WaveGaugeColor = "Gray";
         }
 
-        private const string fillerPattern = @"%(.+)%";
+        private const string fillerPattern = @"%(.*)%";
 
         public SpeechToTextViewModel()
         {
