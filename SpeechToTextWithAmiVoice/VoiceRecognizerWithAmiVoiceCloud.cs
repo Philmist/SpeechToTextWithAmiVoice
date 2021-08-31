@@ -268,7 +268,7 @@ namespace SpeechToTextWithAmiVoice
                 }
                 sendString.TrimEnd();
                 sendString = sendString.Insert(0, HexToString((byte)CommandType.Auth));
-                Debug.WriteLine(String.Format("Connection String: {0}", sendString));
+                //Debug.WriteLine(String.Format("Connection String: {0}", sendString));
 
                 // 認証文字列を実際に送信するバイト列に直す
                 ms.Write(Encoding.UTF8.GetBytes(sendString));

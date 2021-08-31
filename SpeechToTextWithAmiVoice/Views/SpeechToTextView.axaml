@@ -80,6 +80,16 @@
           <TextBox Watermark="Address" MinWidth="200" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
         </DockPanel>
       </DockPanel>
+      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top" Height="30">
+        <TextBlock Width="100" DockPanel.Dock="Left">BCVoice</TextBlock>
+        <ComboBox Items="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </DockPanel>
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left">TextSend Uri</TextBlock>
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
@@ -97,9 +107,9 @@
           <TextBlock Text="{Binding StatusText, Mode=OneWay}"/>
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Margin="2" DockPanel.Dock="Top">
-          <local:ViewboxEx Stretch="Uniform">
+          <Viewbox Stretch="Uniform">
             <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap"/>
-          </local:ViewboxEx>
+          </Viewbox>
         </Border>
       </DockPanel>
     </DockPanel>

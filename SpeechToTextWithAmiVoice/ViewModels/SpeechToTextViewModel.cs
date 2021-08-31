@@ -46,6 +46,13 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref speechToTextSettings, value);
 
         }
+        public ObservableCollection<SpeechToTextSettings.BouyomiChanVoiceMapper> BouyomiChanVoiceItems { get; set; }
+        private SpeechToTextSettings.BouyomiChanVoiceMapper selectedVoice;
+        public SpeechToTextSettings.BouyomiChanVoiceMapper SelectedVoice
+        { 
+            get => selectedVoice;
+            set => this.RaiseAndSetIfChanged(ref selectedVoice, value);
+        }
 
         public ObservableCollection<MMDevice> WaveInDeviceItems { get; set; }
         private MMDevice selectedWaveInDevice;
@@ -136,6 +143,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         }
 
         private const string fillerPattern = @"%(.*)%";
+        private const string deletePattern = @"%%";
 
         public SpeechToTextViewModel()
         {
@@ -149,6 +157,10 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             SpeechToTextSettings.OutputClearingIsEnabled = true;
             SpeechToTextSettings.OutputClearingSeconds = 0;
             SpeechToTextSettings.OutputTextfilePath = "";
+            BouyomiChanVoiceItems = new ObservableCollection<SpeechToTextSettings.BouyomiChanVoiceMapper>(SpeechToTextSettings.BouyomiChanVoiceMap);
+            SelectedVoice = BouyomiChanVoiceItems.First();
+            Debug.WriteLine(SelectedVoice.Name);
+            Debug.WriteLine(BouyomiChanVoiceItems.Count());
 
             WaveGaugeColor = "Gray";
 
@@ -204,7 +216,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
 
-                bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort);
+                bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort, SelectedVoice.Tone);
                 fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
                 textSender = new TextHttpSender(TextOutputUri);
 
@@ -264,6 +276,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                             if (amiVoiceAPI.FillerEnable)
                             {
                                 text = Regex.Replace(text, fillerPattern, @"$1");
+                                text = Regex.Replace(text, deletePattern, @"");
                             }
                             RecognizedText = text;
                             _ = bouyomiChan.Send((speechToTextSettings.BouyomiChanPrefix + text).Trim());
