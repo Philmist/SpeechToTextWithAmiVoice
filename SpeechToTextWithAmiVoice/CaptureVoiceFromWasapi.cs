@@ -1,22 +1,7 @@
 ﻿/*
  * CaptureVoiceFromWasapi.cs
  * 
- * Copyright 2020 Philmist
- * 
- * Copyright 2017 zufall (from: https://github.com/zufall-upon/kikisen-vc)
- * 
- * This file is part of SpeechToTextAmiVoice.
- * SpeechToTextAmiVoice is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * SpeechToTextAmiVoice is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with SpeechToTextAmiVoice.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2020 Philmist 
  */
 
 using NAudio.CoreAudioApi;
@@ -26,6 +11,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reactive.Linq;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SpeechToTextWithAmiVoice
 {
@@ -43,11 +30,8 @@ namespace SpeechToTextWithAmiVoice
         public IObservable<byte[]> Pcm16StreamObservable { get; }
 
         /// <summary>
-        /// Event handler to capture waspi device and convert to pcm16.
+        /// Event handler to capture waspi devic.
         /// </summary>
-        /// <remarks>
-        /// see also: https://qiita.com/zufall/items/2e027a2bc996864fe4af
-        /// </remarks>
         /// <param name="sender"></param>
         /// <param name="eventArgs"></param>
         private void WaspiDataAvailable(object sender, WaveInEventArgs eventArgs)
@@ -59,48 +43,13 @@ namespace SpeechToTextWithAmiVoice
                 return;
             }
 
-            using (var memStream = new MemoryStream(eventArgs.Buffer, 0, eventArgs.BytesRecorded))
-            {
-                using (var inputStream = new RawSourceWaveStream(memStream, capture.WaveFormat))
-                {
-                    var sampleStream = new WaveToSampleProvider(inputStream);
-                    var resamplingProvider = new WdlResamplingSampleProvider(sampleStream, TargetWaveFormat.SampleRate);
-                    var pcmProvider = new SampleToWaveProvider16(resamplingProvider);
-                    IWaveProvider targetProvider = pcmProvider;
-                    if (capture.WaveFormat.Channels == 2)
-                    {
-                        var stereoToMonoProvider = new StereoToMonoProvider16(pcmProvider);
-                        stereoToMonoProvider.RightVolume = 0.5f;
-                        stereoToMonoProvider.LeftVolume = 0.5f;
-                        targetProvider = stereoToMonoProvider;
-                    }
+            var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
+            ResampledDataAvailable?.Invoke(this, recordedAry);
 
-                    byte[] buffer = new byte[eventArgs.BytesRecorded];
+            var volumeBuffer = new WaveBuffer(recordedAry);
+            var maxVolume = (float)volumeBuffer.ShortBuffer[new Range(0, recordedAry.Length / 2)].Max((v) => { return ((double)v < 0.0) ? (-1.0 * (double)v) : (double)v; });
+            ResampledMaxValueAvailable?.Invoke(this, maxVolume);
 
-                    var outputStream = new MemoryStream();
-                    int readBytes;
-                    int writeBytes = 0;
-                    while ((readBytes = targetProvider.Read(buffer, 0, eventArgs.BytesRecorded)) > 0)
-                    {
-                        outputStream.Write(buffer, 0, readBytes);
-                        writeBytes += readBytes;
-                    }
-                    var aryOutputStream = outputStream.ToArray();
-                    ResampledDataAvailable?.Invoke(this, aryOutputStream);
-
-                    float max = 0;
-                    var tempBuffer = new WaveBuffer(aryOutputStream);
-                    for (int index = 0; index < aryOutputStream.Length / 2; index++)
-                    {
-                        var sample = (double)tempBuffer.ShortBuffer[index];
-                        // absolute value 
-                        if (sample < 0.0) sample = -sample;
-                        // is this the max value?
-                        if (sample > max) max = (float)sample;
-                    }
-                    ResampledMaxValueAvailable?.Invoke(this, max);
-                }
-            }
         }
 
         public CaptureVoiceFromWasapi(MMDevice device)
@@ -115,6 +64,7 @@ namespace SpeechToTextWithAmiVoice
             CaptureTargetDevice = device;
             capture = new WasapiCapture(CaptureTargetDevice);
             capture.ShareMode = AudioClientShareMode.Shared;
+            capture.WaveFormat = TargetWaveFormat;
 
             Debug.WriteLine(capture.WaveFormat.Encoding);
             Debug.WriteLine(capture.WaveFormat.SampleRate);
