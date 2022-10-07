@@ -16,4 +16,8 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.18" />
     <PackageReference Include="NAudio" Version="2.1.0" />
   </ItemGroup>
+  <Target Name ="CopyReadmeAndLicenseAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="$(SolutionDir)\README.md" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="$(SolutionDir)\LICENSE.txt" DestinationFolder="$(PublishDir)" />
+  </Target>
 </Project>
