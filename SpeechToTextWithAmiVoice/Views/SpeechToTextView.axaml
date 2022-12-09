@@ -108,7 +108,7 @@
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Margin="2" DockPanel.Dock="Top">
           <Viewbox Stretch="Uniform">
-            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" />
           </Viewbox>
         </Border>
       </DockPanel>
