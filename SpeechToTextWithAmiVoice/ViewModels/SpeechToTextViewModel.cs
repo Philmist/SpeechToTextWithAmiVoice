@@ -83,6 +83,20 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref textOutputUri, value);
         }
 
+        private bool editableIsEnable;
+        public bool EditableIsEnable
+        {
+            get => editableIsEnable;
+            set => this.RaiseAndSetIfChanged(ref editableIsEnable, value);
+        }
+
+        private bool editableIsVisible;
+        public bool EditableIsVisible
+        {
+            get => editableIsVisible;
+            set => this.RaiseAndSetIfChanged(ref editableIsVisible, value);
+        }
+
         public ReactiveCommand<Unit, Unit> OnClickFileSelectButtonCommand { get; }
         public ReactiveCommand<Unit, Unit> OnClickRecordButtonCommand
         {
@@ -113,6 +127,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         {
             RecordButtonText = "Start";
             OnClickRecordButtonCommand = StartRecordingCommand;
+            EditableIsVisible = true;
+            EditableIsEnable = true;
         }
 
         private void changeButtonToStopRecording()
@@ -152,6 +168,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             StatusText = "Status";
             RecognizedText = "";
             TextOutputUri = "";
+            EditableIsEnable = true;
+            EditableIsVisible = true;
 
             SpeechToTextSettings = new SpeechToTextSettings();
             SpeechToTextSettings.OutputClearingIsEnabled = true;
@@ -300,7 +318,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                             Debug.WriteLine(r);
                             if (!String.IsNullOrEmpty(r))
                             {
-                                StatusText = r.Trim();
+                                var nowText = DateTime.Now.ToShortTimeString();
+                                StatusText = String.Format("[{0}] {1}", nowText, r.Trim());
                             }
                         });
 
@@ -328,6 +347,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     SpeechToTextSettings.BouyomiChanPrefix = SpeechToTextSettings.BouyomiChanPrefix.Trim();
                     voiceRecognizer.Start(ct);
                     StatusText = "Start";
+                    EditableIsVisible = false;
+                    EditableIsEnable = false;
                 }
                 catch (Exception ex)
                 {
@@ -336,6 +357,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableRecognizerRecognizeObservable?.Dispose();
                     voiceRecognizer.VoiceStart -= changeGaugeColorOn;
                     voiceRecognizer.VoiceEnd -= changeGaugeColorOff;
+                    EditableIsVisible = true;
+                    EditableIsEnable = true;
                     Debug.WriteLine(ex.Message);
                     throw;
                 }
@@ -352,7 +375,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 try
                 {
                     tokenSource.Cancel();
-                    voiceRecognizer?.messageLoopTask.Wait(5000);
+                    voiceRecognizer?.messageLoopTask.Wait(1000);
                 }
                 catch (Exception)
                 {
@@ -383,6 +406,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
             changeButtonToStartRecording();
             isRecording = false;
+            EditableIsVisible = true;
+            EditableIsEnable = true;
         }
     }
 }

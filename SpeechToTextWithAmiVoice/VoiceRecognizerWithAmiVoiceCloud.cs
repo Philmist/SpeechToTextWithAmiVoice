@@ -215,10 +215,12 @@ namespace SpeechToTextWithAmiVoice
                 {
                     var encodedData = System.Text.Encoding.UTF8.GetString(payload);
                     Debug.WriteLine(encodedData);
+                    Debug.Write("Exit ReceiveTillEnd");
                     return encodedData;
                 }
                 catch (Exception ex) when (ex is ArgumentException || ex is ArgumentNullException || ex is DecoderFallbackException)
                 {
+                    Debug.Write("Exit ReceiveTillEnd");
                     return "";
                 }
             }
@@ -397,26 +399,35 @@ namespace SpeechToTextWithAmiVoice
         private async Task ReceiveLoop(CancellationToken ct)
         {
             List<byte> response = new List<byte>();
-            var buffer = new byte[4096];
+            // var buffer = new byte[4096];
+            var buffer = new ArraySegment<byte>(new byte[8192]);
             while (!ct.IsCancellationRequested && wsAmiVoice.State == WebSocketState.Open)
             {
                 try
                 {
-                    ArraySegment<byte> vs = new ArraySegment<byte>(buffer);
-                    var result = await wsAmiVoice.ReceiveAsync(vs, ct);
-                    if (result.Count == 0)
+                    using (var ms = new MemoryStream())
                     {
-                        continue;
+                        while (!ct.IsCancellationRequested && wsAmiVoice.State == WebSocketState.Open)
+                        {
+                            var result = await wsAmiVoice.ReceiveAsync(buffer, ct);
+                            if (result.Count == 0)
+                            {
+                                continue;
+                            }
+                            ms.Write(buffer.ToArray(), 0, result.Count);
+                            if (result.EndOfMessage)
+                            {
+                                break;
+                            }
+                        }
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        var textArray = ms.ToArray();
+                        var resultText = System.Text.Encoding.UTF8.GetString(textArray);
+                        receiveQueue.Enqueue(resultText);
                     }
-                    response.AddRange(vs.Take(result.Count));
-                    if (!result.EndOfMessage)
-                    {
-                        continue;
-                    }
-                    var textArray = response.ToArray();
-                    var resultText = System.Text.Encoding.UTF8.GetString(textArray);
-                    receiveQueue.Enqueue(resultText);
-                    response.Clear();
                 }
                 catch (WebSocketException ex)
                 {
@@ -471,6 +482,15 @@ namespace SpeechToTextWithAmiVoice
                 {
                     if (ProvidingState == ProvidingStateType.Initialized || (receiveTask != null && receiveTask.Status == TaskStatus.RanToCompletion))
                     {
+                        if (receiveTask != null && receiveTask.Status != TaskStatus.RanToCompletion)
+                        {
+                            if (wsAmiVoice.State == WebSocketState.Open)
+                            {
+                                wsAmiVoice.Abort();
+                            }
+                            receiveTask.Dispose();
+                        }
+
                         Trace?.Invoke(this, "Try to connect.");
                         if (receiveTask != null && receiveTask.Status == TaskStatus.Running)
                         {
@@ -586,7 +606,7 @@ namespace SpeechToTextWithAmiVoice
 
                     // 音声データを送る
                     byte[] sendData;
-                    if (wsAmiVoice.State == WebSocketState.Open && sendQueue.TryDequeue(out sendData))
+                    while (wsAmiVoice.State == WebSocketState.Open && sendQueue.TryDequeue(out sendData))
                     {
                         sendData = prefixC.Concat(sendData).ToArray();
                         if (sendData.Length == 0)
@@ -601,8 +621,11 @@ namespace SpeechToTextWithAmiVoice
                         {
                             var sendErrString = String.Format("Send:WebSocketException: {0}", ex.Message);
                             Trace?.Invoke(this, sendErrString);
+                            break;
                         }
                     }
+
+                    await Task.Delay(50);
                 }
 
                 // 終了処理
