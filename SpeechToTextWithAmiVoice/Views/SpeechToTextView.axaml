@@ -21,23 +21,23 @@
     <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">WebSocket URL</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+        <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">API Key</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+        <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}" IsVisible="{Binding EditableIsVisible}"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Profile ID</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.ProfileId, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" />
+        <TextBox Text="{Binding AmiVoiceAPI.ProfileId, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Filler Enable</TextBlock>
-        <CheckBox IsChecked="{Binding AmiVoiceAPI.FillerEnable, Mode=TwoWay}" IsThreeState="False" />
+        <CheckBox IsChecked="{Binding AmiVoiceAPI.FillerEnable, Mode=TwoWay}" IsThreeState="False" IsEnabled="{Binding EditableIsEnable}"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
-        <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}">
+        <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}" IsEnabled="{Binding EditableIsEnable}">
           <ComboBox.ItemTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding FriendlyName}" />
@@ -47,8 +47,8 @@
       </DockPanel>
       <DockPanel DockPanel.Dock="Top">
         <TextBlock Width="100" VerticalAlignment="Center">FilePath</TextBlock>
-        <TextBox Text="{Binding SpeechToTextSettings.OutputTextfilePath}" MinWidth="200"/>
-        <Button DockPanel.Dock="Right" Command="{Binding OnClickFileSelectButtonCommand}">Select</Button>
+        <TextBox Text="{Binding SpeechToTextSettings.OutputTextfilePath}" MinWidth="200" IsEnabled="{Binding EditableIsEnable}"/>
+        <Button DockPanel.Dock="Right" Command="{Binding OnClickFileSelectButtonCommand}" IsEnabled="{Binding EditableIsEnable}">Select</Button>
       </DockPanel>
       <!--
       <StackPanel DockPanel.Dock="Top">
@@ -74,15 +74,15 @@
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left">BouyomiChan</TextBlock>
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
-          <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
+          <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsEnabled="{Binding EditableIsEnable}"/>
           <TextBlock DockPanel.Dock="Right">:</TextBlock>
-          <TextBox Watermark="Prefix" MinWidth="100" Text="{Binding SpeechToTextSettings.BouyomiChanPrefix}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" />
-          <TextBox Watermark="Address" MinWidth="200" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+          <TextBox Watermark="Prefix" MinWidth="100" Text="{Binding SpeechToTextSettings.BouyomiChanPrefix}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
+          <TextBox Watermark="Address" MinWidth="200" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
         </DockPanel>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top" Height="30">
         <TextBlock Width="100" DockPanel.Dock="Left">BCVoice</TextBlock>
-        <ComboBox Items="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}">
+        <ComboBox Items="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}" IsEnabled="{Binding EditableIsEnable}">
           <ComboBox.ItemTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
@@ -93,7 +93,7 @@
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left">TextSend Uri</TextBlock>
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
-          <TextBox Watermark="HTTP URI" MinWidth="300" Text="{Binding TextOutputUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch"/>
+          <TextBox Watermark="HTTP URI" MinWidth="300" Text="{Binding TextOutputUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
         </DockPanel>
       </DockPanel>
       <DockPanel DockPanel.Dock="Bottom">
