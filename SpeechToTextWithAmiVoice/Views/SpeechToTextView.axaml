@@ -16,6 +16,9 @@
     <Style Selector="TextBox">
       <Setter Property="FontFamily" Value="Meiryo, GlobalUserInterface.CompositeFont" />
     </Style>
+    <Style Selector="TextBlock.ReconizedText">
+      <Setter Property="FontSize" Value="24" />
+    </Style>
   </UserControl.Styles>
   <Border Classes="Main">
     <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">
@@ -104,11 +107,11 @@
       </DockPanel>
       <DockPanel VerticalAlignment="Stretch" DockPanel.Dock="Bottom" >
         <Border BorderBrush="Black" BorderThickness="2" Margin="2" DockPanel.Dock="Bottom">
-          <TextBlock Text="{Binding StatusText, Mode=OneWay}"/>
+          <TextBlock Text="{Binding StatusText, Mode=OneWay}" />
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Margin="2" DockPanel.Dock="Top">
           <Viewbox Stretch="Uniform">
-            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" />
+            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" Classes="RecognizedText" FontSize="24"/>
           </Viewbox>
         </Border>
       </DockPanel>
