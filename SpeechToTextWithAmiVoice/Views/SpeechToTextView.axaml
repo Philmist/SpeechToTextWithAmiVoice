@@ -3,8 +3,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="clr-namespace:SpeechToTextWithAmiVoice;assembly=SpeechToTextWithAmiVoice"
+             xmlns:vm="clr-namespace:SpeechToTextWithAmiVoice.ViewModels;assembly=SpeechToTextWithAmiVoice"
              mc:Ignorable="d"
-             x:Class="SpeechToTextWithAmiVoice.Views.SpeechToTextView">
+             x:Class="SpeechToTextWithAmiVoice.Views.SpeechToTextView"
+             x:DataType="vm:SpeechToTextViewModel"
+             >
   <UserControl.Resources>
     <local:DoubleToDateTimeDeltaStringConverter x:Key="d2dtdConverter" />
   </UserControl.Resources>
@@ -40,7 +43,7 @@
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
-        <ComboBox Items="{Binding WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}" IsEnabled="{Binding EditableIsEnable}">
+        <ComboBox ItemsSource="{Binding Path=WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}" IsEnabled="{Binding EditableIsEnable}">
           <ComboBox.ItemTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding FriendlyName}" />
@@ -85,7 +88,7 @@
       </DockPanel>
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top" Height="30">
         <TextBlock Width="100" DockPanel.Dock="Left">BCVoice</TextBlock>
-        <ComboBox Items="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}" IsEnabled="{Binding EditableIsEnable}">
+        <ComboBox ItemsSource="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}" IsEnabled="{Binding EditableIsEnable}">
           <ComboBox.ItemTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>

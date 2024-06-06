@@ -1,22 +1,24 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <Nullable>annotations</Nullable>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.18" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.18" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.18" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.18" />
+    <PackageReference Include="Avalonia" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.10" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.10" />
     <PackageReference Include="NAudio" Version="2.1.0" />
   </ItemGroup>
-  <Target Name ="CopyReadmeAndLicenseAfterPublish" AfterTargets="Publish">
+  <Target Name="CopyReadmeAndLicenseAfterPublish" AfterTargets="Publish">
     <Copy SourceFiles="$(SolutionDir)\README.md" DestinationFolder="$(PublishDir)" />
     <Copy SourceFiles="$(SolutionDir)\LICENSE.txt" DestinationFolder="$(PublishDir)" />
   </Target>

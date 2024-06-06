@@ -8,6 +8,7 @@
         x:Class="SpeechToTextWithAmiVoice.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="SpeechToTextWithAmiVoice"
+        x:DataType="vm:MainWindowViewModel"
         Content="{Binding Content}"
         Width="500" Height="450"
         >

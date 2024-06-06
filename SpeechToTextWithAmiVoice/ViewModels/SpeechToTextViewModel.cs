@@ -123,7 +123,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref recordButtonText, value);
         }
 
-        private void changeButtonToStartRecording()
+        private void ChangeButtonToStartRecording()
         {
             RecordButtonText = "Start";
             OnClickRecordButtonCommand = StartRecordingCommand;
@@ -131,7 +131,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             EditableIsEnable = true;
         }
 
-        private void changeButtonToStopRecording()
+        private void ChangeButtonToStopRecording()
         {
             RecordButtonText = "Stop";
             OnClickRecordButtonCommand = StopRecordingCommand;
@@ -143,17 +143,17 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private RecognizedTextToFileWriter fileWriter;
         private TextHttpSender textSender;
 
-        private void changeGaugeColorOn(object sender, uint v)
+        private void ChangeGaugeColorOn(object sender, uint v)
         {
             WaveGaugeColor = "Green";
         }
 
-        private void changeGaugeColorOff(object sender, uint v)
+        private void ChangeGaugeColorOff(object sender, uint v)
         {
             WaveGaugeColor = "Blue";
         }
 
-        private void changeGaugeColorDisable()
+        private void ChangeGaugeColorDisable()
         {
             WaveGaugeColor = "Gray";
         }
@@ -171,14 +171,16 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             EditableIsEnable = true;
             EditableIsVisible = true;
 
-            SpeechToTextSettings = new SpeechToTextSettings();
-            SpeechToTextSettings.OutputClearingIsEnabled = true;
-            SpeechToTextSettings.OutputClearingSeconds = 0;
-            SpeechToTextSettings.OutputTextfilePath = "";
+            SpeechToTextSettings = new SpeechToTextSettings
+            {
+                OutputClearingIsEnabled = true,
+                OutputClearingSeconds = 0,
+                OutputTextfilePath = ""
+            };
             BouyomiChanVoiceItems = new ObservableCollection<SpeechToTextSettings.BouyomiChanVoiceMapper>(SpeechToTextSettings.BouyomiChanVoiceMap);
             SelectedVoice = BouyomiChanVoiceItems.First();
             Debug.WriteLine(SelectedVoice.Name);
-            Debug.WriteLine(BouyomiChanVoiceItems.Count());
+            Debug.WriteLine(BouyomiChanVoiceItems.Count);
 
             WaveGaugeColor = "Gray";
 
@@ -192,12 +194,16 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
             OnClickFileSelectButtonCommand = ReactiveCommand.CreateFromTask(async () =>
             {
-                var fileDialog = new SaveFileDialog();
-                fileDialog.DefaultExtension = ".txt";
+                var fileDialog = new SaveFileDialog
+                {
+                    DefaultExtension = ".txt"
+                };
                 var mainWindow = (App.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
                 var fileStr = await fileDialog.ShowAsync(mainWindow);
-                var afterObj = new SpeechToTextSettings(SpeechToTextSettings);
-                afterObj.OutputTextfilePath = fileStr;
+                var afterObj = new SpeechToTextSettings(SpeechToTextSettings)
+                {
+                    OutputTextfilePath = fileStr
+                };
                 SpeechToTextSettings = afterObj;
             });
 
@@ -207,7 +213,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 if (isRecording == true)
                 {
-                    changeButtonToStopRecording();
+                    ChangeButtonToStopRecording();
                     return;
                 }
 
@@ -227,7 +233,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 catch (Exception ex)
                 {
                     isRecording = false;
-                    changeButtonToStartRecording();
+                    ChangeButtonToStartRecording();
                     Debug.WriteLine(ex);
                     return;
                 }
@@ -244,15 +250,15 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     h => captureVoice.ResampledMaxValueAvailable -= h
                     ).Subscribe((v) => { WaveMaxValue = v; });
                 captureVoice.StartRecording();
-                changeButtonToStopRecording();
+                ChangeButtonToStopRecording();
                 isRecording = true;
 
                 try
                 {
                     var ct = tokenSource.Token;
 
-                    voiceRecognizer.VoiceStart += changeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd += changeGaugeColorOff;
+                    voiceRecognizer.VoiceStart += ChangeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd += ChangeGaugeColorOff;
 
                     disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
                         (b) =>
@@ -355,8 +361,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableWaveInObservable?.Dispose();
                     disposableRecognizerErrorObservable?.Dispose();
                     disposableRecognizerRecognizeObservable?.Dispose();
-                    voiceRecognizer.VoiceStart -= changeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd -= changeGaugeColorOff;
+                    voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
                     EditableIsVisible = true;
                     EditableIsEnable = true;
                     Debug.WriteLine(ex.Message);
@@ -368,7 +374,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             {
                 if (isRecording == false)
                 {
-                    changeButtonToStartRecording();
+                    ChangeButtonToStartRecording();
                     return;
                 }
 
@@ -390,21 +396,21 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableRecognizerStopped?.Dispose();
                     disposableTraceObservable?.Dispose();
 
-                    voiceRecognizer.VoiceStart -= changeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd -= changeGaugeColorOff;
+                    voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
+                    voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
 
                     captureVoice.StopRecording();
 
-                    changeGaugeColorDisable();
+                    ChangeGaugeColorDisable();
 
-                    changeButtonToStartRecording();
+                    ChangeButtonToStartRecording();
                     isRecording = false;
                     WaveMaxValue = 0;
 
                 }
             });
 
-            changeButtonToStartRecording();
+            ChangeButtonToStartRecording();
             isRecording = false;
             EditableIsVisible = true;
             EditableIsEnable = true;
