@@ -106,7 +106,7 @@
         <Button Content="{Binding RecordButtonText}" Command="{Binding OnClickRecordButtonCommand}"/>
       </DockPanel>
       <DockPanel DockPanel.Dock="Bottom" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-        <ProgressBar Background="{Binding WaveGaugeColor}"  Maximum="32767" Minimum="0" Value="{Binding WaveMaxValue}" Padding="2" Margin="2"/>
+        <ProgressBar Background="{Binding WaveGaugeColor}"  Maximum="5" Minimum="-100" Value="{Binding WaveMaxValue}" Padding="2" Margin="2"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Stretch" DockPanel.Dock="Bottom" >
         <Border BorderBrush="Black" BorderThickness="2" Margin="2" DockPanel.Dock="Bottom">

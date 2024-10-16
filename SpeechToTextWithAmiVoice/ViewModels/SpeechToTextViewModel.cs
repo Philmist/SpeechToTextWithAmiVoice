@@ -14,6 +14,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Text.RegularExpressions;
+using CircularBuffer;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
@@ -160,10 +161,12 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
         private const string fillerPattern = @"%(.*)%";
         private const string deletePattern = @"%%";
+        const double waveVolumeMinimum = -100.0;
 
         public SpeechToTextViewModel()
         {
             AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "", AppKey = "", FillerEnable = false };
+            WaveMaxValue = waveVolumeMinimum;
 
             StatusText = "Status";
             RecognizedText = "";
@@ -248,7 +251,20 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     h => (s, e) => h(e),
                     h => captureVoice.ResampledMaxValueAvailable += h,
                     h => captureVoice.ResampledMaxValueAvailable -= h
-                    ).Subscribe((v) => { WaveMaxValue = v; });
+                    ).Subscribe((v) => {
+                        double db = 0.0;
+                        const double refdB = 1.0;
+                        double modV = v / 32767.0;
+                        if (modV > 0)
+                        {
+                            db = 20 * Math.Log10(modV / refdB);
+                        }
+                        else
+                        {
+                            db = waveVolumeMinimum;
+                        }
+                        WaveMaxValue = db;
+                    });
                 captureVoice.StartRecording();
                 ChangeButtonToStopRecording();
                 isRecording = true;
@@ -405,7 +421,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                     ChangeButtonToStartRecording();
                     isRecording = false;
-                    WaveMaxValue = 0;
+                    WaveMaxValue = waveVolumeMinimum;
 
                 }
             });
