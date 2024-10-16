@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="300"
+        x:Class="SpeechToTextWithAmiVoice.SettingsPrefWindow"
+        Title="SettingsPrefWindow">
+  <Border Margin="10">
+    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition SharedSizeGroup="Label" Width="Auto"/>
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="30"></RowDefinition>
+          <RowDefinition Height="30"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <Label Grid.Column="0" Grid.Row="0">Authenticate</Label>
+        <DockPanel Grid.Column="1" Grid.Row="0">
+          <RadioButton Content="ENV Var" />
+          <RadioButton Content="ID and Pass" />
+          <RadioButton Content="App Key" />
+          <Button Content="ID and Pass setting" />
+        </DockPanel>
+        
+        <Label Grid.Column="0" Grid.Row="1">App Key</Label>
+        <TextBox Grid.Column="1" Grid.Row="1" AcceptsReturn="False" Watermark="Amivoice APP Key"></TextBox>
+        
+        <Label Grid.Column="0" Grid.Row="2">Text POST URL</Label>
+        <TextBox Grid.Column="1" Grid.Row="2" Watermark="Text POST Url"></TextBox>
+
+        <Label Grid.Column="0" Grid.Row="3">BouyomiChan Address</Label>
+        <DockPanel Grid.Column="1" Grid.Row="3" HorizontalAlignment="Left" LastChildFill="True">
+          <TextBox DockPanel.Dock="Right" MinWidth="80" Watermark="Port" />
+          <Label DockPanel.Dock="Right" HorizontalAlignment="Right">:</Label>
+          <TextBox Watermark="IP" DockPanel.Dock="Left" HorizontalAlignment="Stretch" MinWidth="200"></TextBox>
+        </DockPanel>
+
+        <Label Grid.Column="0" Grid.Row="4">Bouyomichan Voice</Label>
+        <ComboBox Grid.Column="1" Grid.Row="4"></ComboBox>
+      </Grid>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20" Spacing="20">
+        <Button Width="60">OK</Button>
+        <Button Width="60">Cancel</Button>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

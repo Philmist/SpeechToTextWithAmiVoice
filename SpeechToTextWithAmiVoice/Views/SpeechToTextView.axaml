@@ -25,6 +25,7 @@
   </UserControl.Styles>
   <Border Classes="Main">
     <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">
+      <!--
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">WebSocket URL</TextBlock>
         <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
@@ -32,6 +33,12 @@
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">API Key</TextBlock>
         <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}" IsVisible="{Binding EditableIsVisible}"/>
+      </DockPanel>
+      -->
+      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
+        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Engine name</TextBlock>
+        <!-- <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/> -->
+        <TextBox Text="" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Profile ID</TextBlock>
@@ -97,13 +104,17 @@
         </ComboBox>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left">TextSend Uri</TextBlock>
+        <TextBlock Width="100" DockPanel.Dock="Left">TextSend</TextBlock>
         <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
+          <!--
           <TextBox Watermark="HTTP URI" MinWidth="300" Text="{Binding TextOutputUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
+          -->
+          <CheckBox />
         </DockPanel>
       </DockPanel>
-      <DockPanel DockPanel.Dock="Bottom">
-        <Button Content="{Binding RecordButtonText}" Command="{Binding OnClickRecordButtonCommand}"/>
+      <DockPanel DockPanel.Dock="Bottom" VerticalAlignment="Center" Margin="20,0">
+        <Button Content="{Binding RecordButtonText}" Command="{Binding OnClickRecordButtonCommand}" MinWidth="200" VerticalAlignment="Stretch" Margin="20, 0">Recognized</Button>
+        <Button MaxWidth="150" DockPanel.Dock="Right">Settings</Button>
       </DockPanel>
       <DockPanel DockPanel.Dock="Bottom" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <ProgressBar Background="{Binding WaveGaugeColor}"  Maximum="32767" Minimum="0" Value="{Binding WaveMaxValue}" Padding="2" Margin="2"/>

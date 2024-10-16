@@ -163,7 +163,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
         public SpeechToTextViewModel()
         {
-            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "", AppKey = "", FillerEnable = false };
+            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "wss://acp-api.amivoice.com/v1/", AppKey = "", FillerEnable = false };
 
             StatusText = "Status";
             RecognizedText = "";
