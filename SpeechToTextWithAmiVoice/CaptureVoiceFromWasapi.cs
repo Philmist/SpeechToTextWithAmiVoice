@@ -21,6 +21,7 @@ namespace SpeechToTextWithAmiVoice
 
         private MMDevice CaptureTargetDevice;
         private WasapiCapture capture;
+        private AudioMeterInformation audioMeterInformation;
 
         public readonly WaveFormat TargetWaveFormat;
 
@@ -46,8 +47,7 @@ namespace SpeechToTextWithAmiVoice
             var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
             ResampledDataAvailable?.Invoke(this, recordedAry);
 
-            var volumeBuffer = new WaveBuffer(recordedAry);
-            var maxVolume = (float)volumeBuffer.ShortBuffer[new Range(0, recordedAry.Length / 2)].Max((v) => { return ((double)v < 0.0) ? (-1.0 * (double)v) : (double)v; });
+            float maxVolume = audioMeterInformation.MasterPeakValue;
             ResampledMaxValueAvailable?.Invoke(this, maxVolume);
 
         }
@@ -76,6 +76,7 @@ namespace SpeechToTextWithAmiVoice
                 h => ResampledDataAvailable += h,
                 h => ResampledDataAvailable -= h
                 );
+            audioMeterInformation = CaptureTargetDevice.AudioMeterInformation;
         }
 
         public void StartRecording()

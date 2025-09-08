@@ -18,7 +18,8 @@ namespace SpeechToTextWithAmiVoice.Models
             public string Name { get; set; }
             public Int16 Tone { get; set; }
         }
-        public readonly List<BouyomiChanVoiceMapper> BouyomiChanVoiceMap = new List<BouyomiChanVoiceMapper> {
+        public static readonly List<BouyomiChanVoiceMapper> BouyomiChanVoiceMap = new()
+        {
             new BouyomiChanVoiceMapper { Name = "Normal", Tone = -1 },
             new BouyomiChanVoiceMapper { Name = "Display", Tone = 0 },
             new BouyomiChanVoiceMapper { Name = "Female1", Tone = 1 },

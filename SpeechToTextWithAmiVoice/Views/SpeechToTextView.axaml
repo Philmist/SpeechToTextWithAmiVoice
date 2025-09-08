@@ -30,15 +30,23 @@
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">WebSocket URL</TextBlock>
         <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
       </DockPanel>
+      -->
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">API Key</TextBlock>
         <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}" IsVisible="{Binding EditableIsVisible}"/>
       </DockPanel>
-      -->
+      
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Engine name</TextBlock>
         <!-- <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/> -->
-        <TextBox Text="" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
+        <!-- <TextBox Text="" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding AmiVoiceAPI.EngineName, Mode=TwoWay}"/> -->
+        <ComboBox ItemsSource="{Binding Path=AmiVoiceEngineItems}" SelectedItem="{Binding SelectedEngine}" IsEnabled="{Binding EditableIsEnable}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding FriendlyName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
       </DockPanel>
       <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
         <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Profile ID</TextBlock>

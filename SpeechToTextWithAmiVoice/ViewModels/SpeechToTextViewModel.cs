@@ -15,6 +15,9 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Text.RegularExpressions;
 using CircularBuffer;
+using System.Net.Http;
+using Avalonia.Platform.Storage;
+using System.Windows.Forms;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
@@ -25,6 +28,13 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         {
             get => amiVoiceAPI;
             set => this.RaiseAndSetIfChanged(ref amiVoiceAPI, value);
+        }
+        public ObservableCollection<AmiVoiceEngineItem> AmiVoiceEngineItems { get; set; }
+        private AmiVoiceEngineItem selectedEngine;
+        public AmiVoiceEngineItem SelectedEngine
+        {
+            get => selectedEngine;
+            set => this.RaiseAndSetIfChanged(ref selectedEngine, value);
         }
 
         private string statusText;
@@ -163,9 +173,12 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private const string deletePattern = @"%%";
         const double waveVolumeMinimum = -100.0;
 
-        public SpeechToTextViewModel()
+        public SpeechToTextViewModel(IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
         {
-            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "wss://acp-api.amivoice.com/v1/", AppKey = "", FillerEnable = false };
+            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "wss://acp-api.amivoice.com/v1/", AppKey = "", FillerEnable = false, EngineName = "-a-general" };
+            AmiVoiceEngineItems = new ObservableCollection<AmiVoiceEngineItem>(AmiVoiceAPI.PreDefinedEngines);
+            SelectedEngine = AmiVoiceEngineItems.First();
+
             WaveMaxValue = waveVolumeMinimum;
 
             StatusText = "Status";
@@ -197,12 +210,12 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
             OnClickFileSelectButtonCommand = ReactiveCommand.CreateFromTask(async () =>
             {
-                var fileDialog = new SaveFileDialog
-                {
-                    DefaultExtension = ".txt"
-                };
+                FilePickerSaveOptions saveOptions = new FilePickerSaveOptions();
+                saveOptions.DefaultExtension = ".txt";
                 var mainWindow = (App.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-                var fileStr = await fileDialog.ShowAsync(mainWindow);
+                var storage = mainWindow.StorageProvider;
+                IStorageFile? storageFile = await storage.SaveFilePickerAsync(saveOptions);
+                var fileStr = storageFile != null ? storageFile.Name : "";
                 var afterObj = new SpeechToTextSettings(SpeechToTextSettings)
                 {
                     OutputTextfilePath = fileStr
@@ -222,8 +235,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 try
                 {
-
-                    voiceRecognizer = new VoiceRecognizerWithAmiVoiceCloud(amiVoiceAPI.WebSocketURI.Trim(), amiVoiceAPI.AppKey.Trim());
+                    AmiVoiceAPI.EngineName = SelectedEngine.ConnectionId;
+                    voiceRecognizer = new VoiceRecognizerWithAmiVoiceCloud(amiVoiceAPI);
                     if (!String.IsNullOrWhiteSpace(amiVoiceAPI.ProfileId))
                     {
                         voiceRecognizer.ConnectionParameter.Add("profileId", amiVoiceAPI.ProfileId.Trim());
@@ -245,7 +258,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort, SelectedVoice.Tone);
                 fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
-                textSender = new TextHttpSender(TextOutputUri);
+                textSender = new TextHttpSender(TextOutputUri, httpClientFactory);
 
                 disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
                     h => (s, e) => h(e),

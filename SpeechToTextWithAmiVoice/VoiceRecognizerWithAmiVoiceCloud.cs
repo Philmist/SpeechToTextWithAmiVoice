@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using SpeechToTextWithAmiVoice.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -127,16 +128,16 @@ namespace SpeechToTextWithAmiVoice
 
         private readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, IgnoreNullValues = true };
 
-        public VoiceRecognizerWithAmiVoiceCloud(string wsUri, string appKey)
+        public VoiceRecognizerWithAmiVoiceCloud(in AmiVoiceAPI api)
         {
-            var uri = new Uri(wsUri);
+            var uri = new Uri(api.WebSocketURI.Trim());
             if (uri.Scheme != "ws" && uri.Scheme != "wss")
             {
                 throw new ArgumentException("Invalid scheme");
             }
             connectionUri = uri;
-            this.appKey = appKey;
-            this.engine = "-a-general";
+            this.appKey = api.AppKey.Trim();
+            this.engine = api.EngineName.Trim();
 
             wsAmiVoice = new ClientWebSocket();
             sendQueue = new ConcurrentQueue<byte[]>();
