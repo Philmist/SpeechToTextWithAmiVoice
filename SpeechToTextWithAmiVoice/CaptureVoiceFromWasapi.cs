@@ -24,11 +24,11 @@ namespace SpeechToTextWithAmiVoice
         private AudioMeterInformation audioMeterInformation;
 
         public readonly WaveFormat TargetWaveFormat;
-
-        public event EventHandler<byte[]> ResampledDataAvailable;
+        
+        public event EventHandler<ReadOnlyMemory<byte>> ResampledDataAvailable;
         public event EventHandler<float> ResampledMaxValueAvailable;
 
-        public IObservable<byte[]> Pcm16StreamObservable { get; }
+        public IObservable<ReadOnlyMemory<byte>> Pcm16StreamObservable { get; }
 
         /// <summary>
         /// Event handler to capture waspi devic.
@@ -37,15 +37,17 @@ namespace SpeechToTextWithAmiVoice
         /// <param name="eventArgs"></param>
         private void WaspiDataAvailable(object sender, WaveInEventArgs eventArgs)
         {
+            var data = new ReadOnlyMemory<byte>(eventArgs.Buffer, 0, eventArgs.BytesRecorded);
+            /*
             if (eventArgs.BytesRecorded == 0)
             {
-                ResampledDataAvailable?.Invoke(this, new byte[0]);
-                ResampledMaxValueAvailable?.Invoke(this, 0);
+                ResampledDataAvailable?.Invoke(this, new ReadOnlyMemory<byte>());
                 return;
             }
+            */
 
-            var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
-            ResampledDataAvailable?.Invoke(this, recordedAry);
+            //var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
+            ResampledDataAvailable?.Invoke(this, data);
 
             float maxVolume = audioMeterInformation.MasterPeakValue;
             ResampledMaxValueAvailable?.Invoke(this, maxVolume);
@@ -71,7 +73,7 @@ namespace SpeechToTextWithAmiVoice
             Debug.WriteLine(device.DeviceFriendlyName);
 
             capture.DataAvailable += WaspiDataAvailable;
-            Pcm16StreamObservable = Observable.FromEvent<EventHandler<byte[]>, byte[]>(
+            Pcm16StreamObservable = Observable.FromEvent<EventHandler<ReadOnlyMemory<byte>>, ReadOnlyMemory<byte>>(
                 h => (s, e) => h(e),
                 h => ResampledDataAvailable += h,
                 h => ResampledDataAvailable -= h

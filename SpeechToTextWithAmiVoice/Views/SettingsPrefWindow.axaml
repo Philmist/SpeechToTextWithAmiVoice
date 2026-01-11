@@ -2,8 +2,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="300"
+        xmlns:vm="clr-namespace:SpeechToTextWithAmiVoice.ViewModels;assembly=SpeechToTextWithAmiVoice"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
         x:Class="SpeechToTextWithAmiVoice.SettingsPrefWindow"
+        x:DataType="vm:SettingsPrefViewModel"
         Title="SettingsPrefWindow">
   <Border Margin="10">
     <StackPanel Orientation="Vertical" VerticalAlignment="Center">
@@ -17,15 +19,12 @@
           <RowDefinition Height="30"></RowDefinition>
           <RowDefinition Height="30"></RowDefinition>
           <RowDefinition Height="30"></RowDefinition>
-          <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
 
         <Label Grid.Column="0" Grid.Row="0">Authenticate</Label>
         <DockPanel Grid.Column="1" Grid.Row="0">
           <RadioButton Content="ENV Var" />
-          <RadioButton Content="ID and Pass" />
           <RadioButton Content="App Key" />
-          <Button Content="ID and Pass setting" />
         </DockPanel>
         
         <Label Grid.Column="0" Grid.Row="1">App Key</Label>
@@ -41,8 +40,6 @@
           <TextBox Watermark="IP" DockPanel.Dock="Left" HorizontalAlignment="Stretch" MinWidth="200"></TextBox>
         </DockPanel>
 
-        <Label Grid.Column="0" Grid.Row="4">Bouyomichan Voice</Label>
-        <ComboBox Grid.Column="1" Grid.Row="4"></ComboBox>
       </Grid>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20" Spacing="20">
         <Button Width="60">OK</Button>

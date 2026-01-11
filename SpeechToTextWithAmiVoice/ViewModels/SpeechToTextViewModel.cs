@@ -18,6 +18,7 @@ using CircularBuffer;
 using System.Net.Http;
 using Avalonia.Platform.Storage;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
@@ -233,8 +234,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     return;
                 }
 
+                /*
                 try
-                {
+                {*/
                     AmiVoiceAPI.EngineName = SelectedEngine.ConnectionId;
                     voiceRecognizer = new VoiceRecognizerWithAmiVoiceCloud(amiVoiceAPI);
                     if (!String.IsNullOrWhiteSpace(amiVoiceAPI.ProfileId))
@@ -245,7 +247,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     {
                         voiceRecognizer.ConnectionParameter.Add("keepFillerToken", "1");
                     }
-                }
+                //}
+                /*
                 catch (Exception ex)
                 {
                     isRecording = false;
@@ -253,6 +256,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     Debug.WriteLine(ex);
                     return;
                 }
+                */
 
                 captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
 
@@ -292,7 +296,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
                         (b) =>
                         {
-                            voiceRecognizer?.FeedRawWave(b);
+                            voiceRecognizer?.FeedRawWave(b.Span);
                         }
                         );
 
@@ -412,9 +416,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     tokenSource.Cancel();
                     voiceRecognizer?.messageLoopTask.Wait(1000);
                 }
-                catch (Exception)
+                catch (TaskCanceledException)
                 {
-                    throw;
                 }
                 finally
                 {
