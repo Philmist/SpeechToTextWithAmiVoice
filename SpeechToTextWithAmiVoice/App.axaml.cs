@@ -1,10 +1,10 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
+using SpeechToText.Core;
 using SpeechToTextWithAmiVoice.ViewModels;
 using SpeechToTextWithAmiVoice.Views;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualBasic;
 
 namespace SpeechToTextWithAmiVoice
 {
@@ -19,6 +19,7 @@ namespace SpeechToTextWithAmiVoice
             var collection = new ServiceCollection();
             collection.AddTransient<MainWindowViewModel>();
             collection.AddTransient<SpeechToTextViewModel>();
+            collection.AddSingleton<IAudioCaptureServiceFactory, WasapiAudioCaptureServiceFactory>();
             collection.AddHttpClient();
             var services = collection.BuildServiceProvider();
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

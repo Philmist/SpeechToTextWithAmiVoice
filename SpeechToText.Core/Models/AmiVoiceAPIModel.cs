@@ -1,4 +1,4 @@
-﻿namespace SpeechToTextWithAmiVoice.Models
+namespace SpeechToText.Core.Models
 {
     //using AmiVoiceEngineItem = (string FriendlyName, string ConnectionId);
     public struct AmiVoiceEngineItem
@@ -6,7 +6,7 @@
         public string FriendlyName { get; init; }
         public string ConnectionId { get; init; }
     }
-    class AmiVoiceAPI
+    public class AmiVoiceAPI
     {
         public string WebSocketURI { get; set; }
         public string AppKey { get; set; }

@@ -1,11 +1,11 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Macross.Json.Extensions;
 
-namespace SpeechToTextWithAmiVoice.Models
+namespace SpeechToText.Core.Models
 {
-    class PreferenceModel
+    public class PreferenceModel
     {
         public PrefStorageEnum PrefStorage { get; set; }
         public string? AppKey { get; set; }
@@ -17,13 +17,13 @@ namespace SpeechToTextWithAmiVoice.Models
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<PrefStorageEnum>))]
-    enum PrefStorageEnum
+    public enum PrefStorageEnum
     {
         Env,
         AppKey,
     }
 
-    enum BouyomiChanVoiceTypeEnum
+    public enum BouyomiChanVoiceTypeEnum
     {
         Normal,
         Display,

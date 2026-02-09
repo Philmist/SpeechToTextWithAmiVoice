@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
-namespace SpeechToTextWithAmiVoice.Models
+namespace SpeechToText.Core.Models
 {
-    class SpeechToTextSettings
+    public class SpeechToTextSettings
     {
         public string OutputTextfilePath { get; set; }
         public bool OutputClearingIsEnabled { get; set; }

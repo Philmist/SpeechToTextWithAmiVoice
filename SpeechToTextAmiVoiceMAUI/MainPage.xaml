@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SpeechToTextAmiVoiceMAUI.MainPage"
+             Title="SpeechToText AmiVoice">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Settings"
+                     Clicked="OnSettingsClicked" />
+    </ContentPage.ToolbarItems>
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="10">
+            <Label Text="Runtime Options" FontAttributes="Bold" FontSize="18" />
+
+            <Picker Title="Engine"
+                    ItemsSource="{Binding EngineItems}"
+                    SelectedItem="{Binding SelectedEngine}"
+                    ItemDisplayBinding="{Binding FriendlyName}"
+                    IsEnabled="{Binding CanEditSettings}" />
+
+            <Entry Placeholder="Profile ID"
+                   Text="{Binding ProfileId}"
+                   IsEnabled="{Binding CanEditSettings}" />
+
+            <HorizontalStackLayout>
+                <Label Text="Filler Enable" VerticalOptions="Center" />
+                <Switch IsToggled="{Binding FillerEnabled}" IsEnabled="{Binding CanEditSettings}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Output Toggles" FontAttributes="Bold" FontSize="18" Margin="0,8,0,0" />
+
+            <HorizontalStackLayout>
+                <Label Text="Enable HTTP POST" VerticalOptions="Center" />
+                <Switch IsToggled="{Binding EnableHttpPost}" IsEnabled="{Binding CanEditSettings}" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout>
+                <Label Text="Enable Bouyomi-chan" VerticalOptions="Center" />
+                <Switch IsToggled="{Binding EnableBouyomi}" IsEnabled="{Binding CanEditSettings}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Audio Input" FontAttributes="Bold" FontSize="18" Margin="0,8,0,0" />
+
+            <Picker Title="Microphone"
+                    ItemsSource="{Binding AudioDevices}"
+                    SelectedItem="{Binding SelectedAudioDevice}"
+                    ItemDisplayBinding="{Binding FriendlyName}"
+                    IsEnabled="{Binding CanEditSettings}" />
+
+            <Button Text="Refresh Devices"
+                    Command="{Binding RefreshDevicesCommand}"
+                    IsEnabled="{Binding CanEditSettings}" />
+
+            <Button Text="{Binding RecordButtonText}"
+                    Command="{Binding ToggleRecordingCommand}"
+                    FontAttributes="Bold"
+                    HeightRequest="48"
+                    Margin="0,8,0,0" />
+
+            <ProgressBar Progress="{Binding WaveProgress}"
+                         ScaleY="2" />
+
+            <Label Text="Status" FontAttributes="Bold" />
+            <Label Text="{Binding StatusText}" />
+
+            <Label Text="Metrics" FontAttributes="Bold" Margin="0,8,0,0" />
+            <Label Text="Connection Established Count" />
+            <Label Text="{Binding ConnectionEstablishedCount}" />
+            <Label Text="Last Disconnect Reason" />
+            <Label Text="{Binding LastDisconnectReason}" />
+            <Label Text="Last Recognized At" />
+            <Label Text="{Binding LastRecognizedAt}" />
+            <Label Text="Dropped Backpressure Count" />
+            <Label Text="{Binding DroppedBackpressureCount}" />
+
+            <Label Text="Recognized Text" FontAttributes="Bold" />
+            <Frame BorderColor="Gray" Padding="8" CornerRadius="6">
+                <Label Text="{Binding RecognizedText}" LineBreakMode="WordWrap" />
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

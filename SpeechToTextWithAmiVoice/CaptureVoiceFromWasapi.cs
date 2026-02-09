@@ -6,25 +6,21 @@
 
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
+using SpeechToText.Core;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reactive.Linq;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SpeechToTextWithAmiVoice
 {
-    class CaptureVoiceFromWasapi
+    sealed class CaptureVoiceFromWasapi : IAudioCaptureService
     {
-
-        private MMDevice CaptureTargetDevice;
-        private WasapiCapture capture;
-        private AudioMeterInformation audioMeterInformation;
+        private readonly MMDevice captureTargetDevice;
+        private readonly WasapiCapture capture;
+        private readonly AudioMeterInformation audioMeterInformation;
 
         public readonly WaveFormat TargetWaveFormat;
-        
+
         public event EventHandler<ReadOnlyMemory<byte>> ResampledDataAvailable;
         public event EventHandler<float> ResampledMaxValueAvailable;
 
@@ -63,8 +59,8 @@ namespace SpeechToTextWithAmiVoice
                 throw new ArgumentException("Device does not have capture capatibity");
             }
 
-            CaptureTargetDevice = device;
-            capture = new WasapiCapture(CaptureTargetDevice);
+            captureTargetDevice = device;
+            capture = new WasapiCapture(captureTargetDevice);
             capture.ShareMode = AudioClientShareMode.Shared;
             capture.WaveFormat = TargetWaveFormat;
 
@@ -78,7 +74,7 @@ namespace SpeechToTextWithAmiVoice
                 h => ResampledDataAvailable += h,
                 h => ResampledDataAvailable -= h
                 );
-            audioMeterInformation = CaptureTargetDevice.AudioMeterInformation;
+            audioMeterInformation = captureTargetDevice.AudioMeterInformation;
         }
 
         public void StartRecording()
@@ -91,5 +87,10 @@ namespace SpeechToTextWithAmiVoice
             capture.StopRecording();
         }
 
+        public void Dispose()
+        {
+            capture.DataAvailable -= WaspiDataAvailable;
+            capture.Dispose();
+        }
     }
 }

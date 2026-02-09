@@ -1,9 +1,8 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using NAudio.CoreAudioApi;
-using NAudio.Wave;
 using ReactiveUI;
-using SpeechToTextWithAmiVoice.Models;
+using SpeechToText.Core;
+using SpeechToText.Core.Models;
 using SpeechToTextWithAmiVoice.Views;
 using System;
 using System.Collections.Generic;
@@ -14,10 +13,8 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Text.RegularExpressions;
-using CircularBuffer;
 using System.Net.Http;
 using Avalonia.Platform.Storage;
-using System.Windows.Forms;
 using System.Threading.Tasks;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
@@ -66,9 +63,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
             set => this.RaiseAndSetIfChanged(ref selectedVoice, value);
         }
 
-        public ObservableCollection<MMDevice> WaveInDeviceItems { get; set; }
-        private MMDevice selectedWaveInDevice;
-        public MMDevice SelectedWaveInDevice
+        public ObservableCollection<AudioInputDevice> WaveInDeviceItems { get; set; }
+        private AudioInputDevice selectedWaveInDevice;
+        public AudioInputDevice SelectedWaveInDevice
         {
             get => selectedWaveInDevice;
             set => this.RaiseAndSetIfChanged(ref selectedWaveInDevice, value);
@@ -126,7 +123,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private IDisposable disposableRecognizerStopped;
         private IDisposable disposableTraceObservable;
 
-        private CaptureVoiceFromWasapi captureVoice;
+        private IAudioCaptureService? captureVoice;
 
         private string recordButtonText;
         public string RecordButtonText
@@ -174,7 +171,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
         private const string deletePattern = @"%%";
         const double waveVolumeMinimum = -100.0;
 
-        public SpeechToTextViewModel(IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
+        public SpeechToTextViewModel(IAudioCaptureServiceFactory audioCaptureServiceFactory, IHttpClientFactory httpClientFactory)
         {
             AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "wss://acp-api.amivoice.com/v1/", AppKey = "", FillerEnable = false, EngineName = "-a-general" };
             AmiVoiceEngineItems = new ObservableCollection<AmiVoiceEngineItem>(AmiVoiceAPI.PreDefinedEngines);
@@ -201,11 +198,10 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
             WaveGaugeColor = "Gray";
 
-            var deviceEnum = new MMDeviceEnumerator();
-            var devices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
-            WaveInDeviceItems = new ObservableCollection<MMDevice>(devices);
+            var devices = audioCaptureServiceFactory.GetAvailableDevices();
+            WaveInDeviceItems = new ObservableCollection<AudioInputDevice>(devices);
             SelectedWaveInDevice = WaveInDeviceItems.First();
-            captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
+            captureVoice = null;
             disposableWaveInObservable = null;
 
 
@@ -258,7 +254,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                 }
                 */
 
-                captureVoice = new CaptureVoiceFromWasapi(SelectedWaveInDevice);
+                captureVoice?.Dispose();
+                captureVoice = audioCaptureServiceFactory.Create(SelectedWaveInDevice);
 
                 bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort, SelectedVoice.Tone);
                 fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
@@ -266,8 +263,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
 
                 disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
                     h => (s, e) => h(e),
-                    h => captureVoice.ResampledMaxValueAvailable += h,
-                    h => captureVoice.ResampledMaxValueAvailable -= h
+                    h => captureVoice!.ResampledMaxValueAvailable += h,
+                    h => captureVoice!.ResampledMaxValueAvailable -= h
                     ).Subscribe((v) => {
                         double db = 0.0;
                         const double refdB = 1.0;
@@ -296,7 +293,7 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
                         (b) =>
                         {
-                            voiceRecognizer?.FeedRawWave(b.Span);
+                            _ = voiceRecognizer?.TryFeedRawWave(b.Span);
                         }
                         );
 
@@ -396,6 +393,8 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     disposableRecognizerRecognizeObservable?.Dispose();
                     voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
                     voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
+                    captureVoice?.Dispose();
+                    captureVoice = null;
                     EditableIsVisible = true;
                     EditableIsEnable = true;
                     Debug.WriteLine(ex.Message);
@@ -431,7 +430,9 @@ namespace SpeechToTextWithAmiVoice.ViewModels
                     voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
                     voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
 
-                    captureVoice.StopRecording();
+                    captureVoice?.StopRecording();
+                    captureVoice?.Dispose();
+                    captureVoice = null;
 
                     ChangeGaugeColorDisable();
 

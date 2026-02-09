@@ -25,6 +25,9 @@
   <ItemGroup>
     <Folder Include="Messages\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SpeechToText.Core\SpeechToText.Core.csproj" />
+  </ItemGroup>
   <Target Name="CopyReadmeAndLicenseAfterPublish" AfterTargets="Publish">
     <Copy SourceFiles="$(SolutionDir)\README.md" DestinationFolder="$(PublishDir)" />
     <Copy SourceFiles="$(SolutionDir)\LICENSE.txt" DestinationFolder="$(PublishDir)" />

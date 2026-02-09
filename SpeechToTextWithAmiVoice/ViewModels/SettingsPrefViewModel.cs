@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ReactiveUI;
-using SpeechToTextWithAmiVoice.Models;
+using SpeechToText.Core.Models;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {

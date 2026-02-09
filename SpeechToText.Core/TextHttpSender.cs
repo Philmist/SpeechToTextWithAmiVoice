@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,9 +11,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace SpeechToTextWithAmiVoice
+namespace SpeechToText.Core
 {
-    class TextHttpSender
+    public class TextHttpSender
     {
         public class RecognizedText
         {
