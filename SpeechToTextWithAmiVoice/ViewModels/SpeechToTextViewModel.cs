@@ -1,452 +1,386 @@
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using ReactiveUI;
 using SpeechToText.Core;
 using SpeechToText.Core.Models;
-using SpeechToTextWithAmiVoice.Views;
+using SpeechToTextWithAmiVoice.Services;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Linq;
-using System.Threading;
 using System.Text.RegularExpressions;
-using System.Net.Http;
-using Avalonia.Platform.Storage;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
-    class SpeechToTextViewModel : ViewModelBase
+    public class SpeechToTextViewModel : ViewModelBase
     {
-        private AmiVoiceAPI amiVoiceAPI;
-        public AmiVoiceAPI AmiVoiceAPI
-        {
-            get => amiVoiceAPI;
-            set => this.RaiseAndSetIfChanged(ref amiVoiceAPI, value);
-        }
-        public ObservableCollection<AmiVoiceEngineItem> AmiVoiceEngineItems { get; set; }
+        private const string FillerPattern = @"%(.*)%";
+        private const string DeletePattern = @"%%";
+        private const double WaveVolumeMinimum = -100.0;
+
+        private readonly ISettingsStore settingsStore;
+        private readonly RecognitionSessionCoordinator sessionCoordinator;
+        private readonly RecognitionResultDispatcher resultDispatcher;
+
+        private CancellationTokenSource? cancellationTokenSource;
+        private bool isRecording;
+        private bool isTransitioning;
+        private bool suppressRuntimeSave;
+        private string preferredAudioDeviceId = "";
+
+        public ObservableCollection<AmiVoiceEngineItem> AmiVoiceEngineItems { get; }
+        public ObservableCollection<AudioInputDevice> WaveInDeviceItems { get; }
+
         private AmiVoiceEngineItem selectedEngine;
         public AmiVoiceEngineItem SelectedEngine
         {
             get => selectedEngine;
-            set => this.RaiseAndSetIfChanged(ref selectedEngine, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref selectedEngine, value);
+                SaveRuntimeOptions();
+            }
         }
 
-        private string statusText;
+        private AudioInputDevice? selectedWaveInDevice;
+        public AudioInputDevice? SelectedWaveInDevice
+        {
+            get => selectedWaveInDevice;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref selectedWaveInDevice, value);
+                SaveRuntimeOptions();
+            }
+        }
+
+        private string profileId = "";
+        public string ProfileId
+        {
+            get => profileId;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref profileId, value);
+                SaveRuntimeOptions();
+            }
+        }
+
+        private bool fillerEnabled;
+        public bool FillerEnabled
+        {
+            get => fillerEnabled;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref fillerEnabled, value);
+                SaveRuntimeOptions();
+            }
+        }
+
+        private bool enableHttpPost;
+        public bool EnableHttpPost
+        {
+            get => enableHttpPost;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref enableHttpPost, value);
+                SaveRuntimeOptions();
+            }
+        }
+
+        private bool enableBouyomi;
+        public bool EnableBouyomi
+        {
+            get => enableBouyomi;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref enableBouyomi, value);
+                SaveRuntimeOptions();
+            }
+        }
+
+        private string statusText = "Ready";
         public string StatusText
         {
             get => statusText;
             set => this.RaiseAndSetIfChanged(ref statusText, value);
         }
-        private string recognizedText;
+
+        private string recognizedText = "";
         public string RecognizedText
         {
             get => recognizedText;
             set => this.RaiseAndSetIfChanged(ref recognizedText, value);
         }
 
-        private SpeechToTextSettings speechToTextSettings;
-        public SpeechToTextSettings SpeechToTextSettings
-        {
-            get => speechToTextSettings;
-            set => this.RaiseAndSetIfChanged(ref speechToTextSettings, value);
-
-        }
-        public ObservableCollection<SpeechToTextSettings.BouyomiChanVoiceMapper> BouyomiChanVoiceItems { get; set; }
-        private SpeechToTextSettings.BouyomiChanVoiceMapper selectedVoice;
-        public SpeechToTextSettings.BouyomiChanVoiceMapper SelectedVoice
-        { 
-            get => selectedVoice;
-            set => this.RaiseAndSetIfChanged(ref selectedVoice, value);
-        }
-
-        public ObservableCollection<AudioInputDevice> WaveInDeviceItems { get; set; }
-        private AudioInputDevice selectedWaveInDevice;
-        public AudioInputDevice SelectedWaveInDevice
-        {
-            get => selectedWaveInDevice;
-            set => this.RaiseAndSetIfChanged(ref selectedWaveInDevice, value);
-        }
-
-        private double waveMaxValue;
+        private double waveMaxValue = WaveVolumeMinimum;
         public double WaveMaxValue
         {
             get => waveMaxValue;
             set => this.RaiseAndSetIfChanged(ref waveMaxValue, value);
         }
 
-        private string waveGaugeColor;
-        public string WaveGaugeColor
+        private long droppedBackpressureCount;
+        public long DroppedBackpressureCount
         {
-            get => waveGaugeColor;
-            set => this.RaiseAndSetIfChanged(ref waveGaugeColor, value);
+            get => droppedBackpressureCount;
+            set => this.RaiseAndSetIfChanged(ref droppedBackpressureCount, value);
         }
 
-        private string textOutputUri;
-        public string TextOutputUri
+        private int connectionEstablishedCount;
+        public int ConnectionEstablishedCount
         {
-            get => textOutputUri;
-            set => this.RaiseAndSetIfChanged(ref textOutputUri, value);
+            get => connectionEstablishedCount;
+            set => this.RaiseAndSetIfChanged(ref connectionEstablishedCount, value);
         }
 
-        private bool editableIsEnable;
-        public bool EditableIsEnable
+        private string lastDisconnectReason = "N/A";
+        public string LastDisconnectReason
         {
-            get => editableIsEnable;
-            set => this.RaiseAndSetIfChanged(ref editableIsEnable, value);
+            get => lastDisconnectReason;
+            set => this.RaiseAndSetIfChanged(ref lastDisconnectReason, value);
         }
 
-        private bool editableIsVisible;
-        public bool EditableIsVisible
+        private string lastRecognizedAt = "-";
+        public string LastRecognizedAt
         {
-            get => editableIsVisible;
-            set => this.RaiseAndSetIfChanged(ref editableIsVisible, value);
+            get => lastRecognizedAt;
+            set => this.RaiseAndSetIfChanged(ref lastRecognizedAt, value);
         }
 
-        public ReactiveCommand<Unit, Unit> OnClickFileSelectButtonCommand { get; }
-        public ReactiveCommand<Unit, Unit> OnClickRecordButtonCommand
+        public bool IsRecording
         {
-            get => onClickRecordButtonCommand;
-            set => this.RaiseAndSetIfChanged(ref onClickRecordButtonCommand, value);
-        }
-        protected ReactiveCommand<Unit, Unit> onClickRecordButtonCommand;
-        private ReactiveCommand<Unit, Unit> StartRecordingCommand;
-        private ReactiveCommand<Unit, Unit> StopRecordingCommand;
-        private bool isRecording;
-        private IDisposable disposableWaveInObservable;
-        private IDisposable disposableWaveMaxObservable;
-        private IDisposable disposableRecognizerErrorObservable;
-        private IDisposable disposableRecognizerRecognizeObservable;
-        private IDisposable disposableRecognizerStopped;
-        private IDisposable disposableTraceObservable;
-
-        private IAudioCaptureService? captureVoice;
-
-        private string recordButtonText;
-        public string RecordButtonText
-        {
-            get => recordButtonText;
-            set => this.RaiseAndSetIfChanged(ref recordButtonText, value);
+            get => isRecording;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref isRecording, value);
+                this.RaisePropertyChanged(nameof(CanEditSettings));
+                this.RaisePropertyChanged(nameof(RecordButtonText));
+            }
         }
 
-        private void ChangeButtonToStartRecording()
+        public bool CanEditSettings => !IsRecording && !isTransitioning;
+
+        public string RecordButtonText => IsRecording ? "Stop" : "Start";
+
+        public ReactiveCommand<Unit, Unit> ToggleRecordingCommand { get; }
+        public ReactiveCommand<Unit, Unit> RefreshDevicesCommand { get; }
+        public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
+
+        public event EventHandler? OpenSettingsRequested;
+
+        public SpeechToTextViewModel(
+            ISettingsStore settingsStore,
+            RecognitionSessionCoordinator sessionCoordinator,
+            RecognitionResultDispatcher resultDispatcher)
         {
-            RecordButtonText = "Start";
-            OnClickRecordButtonCommand = StartRecordingCommand;
-            EditableIsVisible = true;
-            EditableIsEnable = true;
-        }
+            this.settingsStore = settingsStore;
+            this.sessionCoordinator = sessionCoordinator;
+            this.resultDispatcher = resultDispatcher;
 
-        private void ChangeButtonToStopRecording()
-        {
-            RecordButtonText = "Stop";
-            OnClickRecordButtonCommand = StopRecordingCommand;
-        }
-
-        private VoiceRecognizerWithAmiVoiceCloud voiceRecognizer;
-        private CancellationTokenSource tokenSource;
-        private BouyomiChanSender bouyomiChan;
-        private RecognizedTextToFileWriter fileWriter;
-        private TextHttpSender textSender;
-
-        private void ChangeGaugeColorOn(object sender, uint v)
-        {
-            WaveGaugeColor = "Green";
-        }
-
-        private void ChangeGaugeColorOff(object sender, uint v)
-        {
-            WaveGaugeColor = "Blue";
-        }
-
-        private void ChangeGaugeColorDisable()
-        {
-            WaveGaugeColor = "Gray";
-        }
-
-        private const string fillerPattern = @"%(.*)%";
-        private const string deletePattern = @"%%";
-        const double waveVolumeMinimum = -100.0;
-
-        public SpeechToTextViewModel(IAudioCaptureServiceFactory audioCaptureServiceFactory, IHttpClientFactory httpClientFactory)
-        {
-            AmiVoiceAPI = new AmiVoiceAPI { WebSocketURI = "wss://acp-api.amivoice.com/v1/", AppKey = "", FillerEnable = false, EngineName = "-a-general" };
             AmiVoiceEngineItems = new ObservableCollection<AmiVoiceEngineItem>(AmiVoiceAPI.PreDefinedEngines);
-            SelectedEngine = AmiVoiceEngineItems.First();
+            selectedEngine = AmiVoiceEngineItems.First();
+            WaveInDeviceItems = new ObservableCollection<AudioInputDevice>();
 
-            WaveMaxValue = waveVolumeMinimum;
+            ToggleRecordingCommand = ReactiveCommand.CreateFromTask(ToggleRecordingAsync);
+            RefreshDevicesCommand = ReactiveCommand.Create(RefreshDevices);
+            OpenSettingsCommand = ReactiveCommand.Create(() => OpenSettingsRequested?.Invoke(this, EventArgs.Empty));
 
-            StatusText = "Status";
-            RecognizedText = "";
-            TextOutputUri = "";
-            EditableIsEnable = true;
-            EditableIsVisible = true;
+            sessionCoordinator.RecognizingTextUpdated += OnRecognizingTextUpdated;
+            sessionCoordinator.Recognized += OnRecognized;
+            sessionCoordinator.WaveLevelUpdated += (_, db) => WaveMaxValue = db;
+            sessionCoordinator.DroppedBackpressureUpdated += (_, count) => DroppedBackpressureCount = count;
+            sessionCoordinator.ConnectionEstablishedCountUpdated += (_, count) => ConnectionEstablishedCount = count;
+            sessionCoordinator.LastDisconnectReasonUpdated += (_, reason) => LastDisconnectReason = reason;
+            sessionCoordinator.StatusUpdated += (_, status) => StatusText = status;
+            sessionCoordinator.RunningStateUpdated += (_, running) => IsRecording = running;
 
-            SpeechToTextSettings = new SpeechToTextSettings
+            suppressRuntimeSave = true;
+            LoadRuntimeOptions();
+            RefreshDevices();
+            suppressRuntimeSave = false;
+            this.RaisePropertyChanged(nameof(CanEditSettings));
+            this.RaisePropertyChanged(nameof(RecordButtonText));
+        }
+
+        private async Task ToggleRecordingAsync()
+        {
+            if (isTransitioning)
             {
-                OutputClearingIsEnabled = true,
-                OutputClearingSeconds = 0,
-                OutputTextfilePath = ""
+                return;
+            }
+
+            isTransitioning = true;
+            this.RaisePropertyChanged(nameof(CanEditSettings));
+
+            try
+            {
+                if (IsRecording)
+                {
+                    await StopRecordingAsync();
+                }
+                else
+                {
+                    await StartRecordingAsync();
+                }
+            }
+            finally
+            {
+                isTransitioning = false;
+                this.RaisePropertyChanged(nameof(CanEditSettings));
+            }
+        }
+
+        private async Task StartRecordingAsync()
+        {
+            if (SelectedWaveInDevice is null)
+            {
+                StatusText = "No audio input device is selected.";
+                return;
+            }
+
+            var connectionSettings = settingsStore.LoadConnectionSettings();
+            if (string.IsNullOrWhiteSpace(connectionSettings.ApiKey))
+            {
+                StatusText = "API Key is required. Open Settings.";
+                return;
+            }
+
+            var runtimeOptions = BuildRuntimeOptions();
+            settingsStore.SaveRuntimeOptions(runtimeOptions);
+            resultDispatcher.Configure(connectionSettings, runtimeOptions);
+
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = new CancellationTokenSource();
+
+            bool started;
+            try
+            {
+                started = await sessionCoordinator.StartAsync(
+                    connectionSettings,
+                    runtimeOptions,
+                    SelectedWaveInDevice,
+                    cancellationTokenSource.Token);
+            }
+            catch (Exception ex)
+            {
+                StatusText = ex.Message;
+                IsRecording = false;
+                return;
+            }
+
+            if (!started)
+            {
+                IsRecording = false;
+                return;
+            }
+
+            IsRecording = true;
+            DroppedBackpressureCount = 0;
+        }
+
+        private async Task StopRecordingAsync()
+        {
+            cancellationTokenSource?.Cancel();
+            try
+            {
+                await sessionCoordinator.StopAsync();
+            }
+            catch (Exception ex)
+            {
+                StatusText = ex.Message;
+            }
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = null;
+            WaveMaxValue = WaveVolumeMinimum;
+            IsRecording = false;
+        }
+
+        private void RefreshDevices()
+        {
+            var previousId = SelectedWaveInDevice?.Id;
+            var devices = sessionCoordinator.GetAvailableDevices();
+            WaveInDeviceItems.Clear();
+            foreach (var device in devices)
+            {
+                WaveInDeviceItems.Add(device);
+            }
+
+            var targetId = string.IsNullOrWhiteSpace(previousId) ? preferredAudioDeviceId : previousId;
+            SelectedWaveInDevice = WaveInDeviceItems.FirstOrDefault(d => d.Id == targetId)
+                ?? WaveInDeviceItems.FirstOrDefault();
+
+            if (!WaveInDeviceItems.Any())
+            {
+                StatusText = "No audio input device is available.";
+            }
+        }
+
+        private void OnRecognizingTextUpdated(object? sender, string text)
+        {
+            RecognizedText = text;
+        }
+
+        private void OnRecognized(object? sender, VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.code))
+            {
+                return;
+            }
+
+            var text = NormalizeRecognizedText(e.Text ?? "");
+            RecognizedText = text;
+            LastRecognizedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            _ = resultDispatcher.DispatchAsync(text);
+        }
+
+        private string NormalizeRecognizedText(string text)
+        {
+            if (!FillerEnabled)
+            {
+                return text;
+            }
+
+            var normalized = Regex.Replace(text, FillerPattern, "$1");
+            normalized = Regex.Replace(normalized, DeletePattern, "");
+            return normalized;
+        }
+
+        private RuntimeOptions BuildRuntimeOptions()
+        {
+            return new RuntimeOptions
+            {
+                ProfileId = ProfileId?.Trim() ?? "",
+                FillerEnabled = FillerEnabled,
+                EngineConnectionId = string.IsNullOrWhiteSpace(SelectedEngine.ConnectionId) ? "-a-general" : SelectedEngine.ConnectionId,
+                AudioDeviceId = SelectedWaveInDevice?.Id ?? "",
+                EnableHttpPost = EnableHttpPost,
+                EnableBouyomi = EnableBouyomi
             };
-            BouyomiChanVoiceItems = new ObservableCollection<SpeechToTextSettings.BouyomiChanVoiceMapper>(SpeechToTextSettings.BouyomiChanVoiceMap);
-            SelectedVoice = BouyomiChanVoiceItems.First();
-            Debug.WriteLine(SelectedVoice.Name);
-            Debug.WriteLine(BouyomiChanVoiceItems.Count);
+        }
 
-            WaveGaugeColor = "Gray";
+        private void LoadRuntimeOptions()
+        {
+            var options = settingsStore.LoadRuntimeOptions();
+            ProfileId = options.ProfileId;
+            FillerEnabled = options.FillerEnabled;
+            EnableHttpPost = options.EnableHttpPost;
+            EnableBouyomi = options.EnableBouyomi;
+            preferredAudioDeviceId = options.AudioDeviceId ?? "";
 
-            var devices = audioCaptureServiceFactory.GetAvailableDevices();
-            WaveInDeviceItems = new ObservableCollection<AudioInputDevice>(devices);
-            SelectedWaveInDevice = WaveInDeviceItems.First();
-            captureVoice = null;
-            disposableWaveInObservable = null;
-
-
-            OnClickFileSelectButtonCommand = ReactiveCommand.CreateFromTask(async () =>
+            var selected = AmiVoiceEngineItems.FirstOrDefault(e => e.ConnectionId == options.EngineConnectionId);
+            if (!string.IsNullOrWhiteSpace(selected.ConnectionId))
             {
-                FilePickerSaveOptions saveOptions = new FilePickerSaveOptions();
-                saveOptions.DefaultExtension = ".txt";
-                var mainWindow = (App.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-                var storage = mainWindow.StorageProvider;
-                IStorageFile? storageFile = await storage.SaveFilePickerAsync(saveOptions);
-                var fileStr = storageFile != null ? storageFile.Name : "";
-                var afterObj = new SpeechToTextSettings(SpeechToTextSettings)
-                {
-                    OutputTextfilePath = fileStr
-                };
-                SpeechToTextSettings = afterObj;
-            });
+                SelectedEngine = selected;
+            }
+        }
 
-            StartRecordingCommand = ReactiveCommand.Create(() =>
+        private void SaveRuntimeOptions()
+        {
+            if (suppressRuntimeSave)
             {
-                tokenSource = new CancellationTokenSource();
+                return;
+            }
 
-                if (isRecording == true)
-                {
-                    ChangeButtonToStopRecording();
-                    return;
-                }
-
-                /*
-                try
-                {*/
-                    AmiVoiceAPI.EngineName = SelectedEngine.ConnectionId;
-                    voiceRecognizer = new VoiceRecognizerWithAmiVoiceCloud(amiVoiceAPI);
-                    if (!String.IsNullOrWhiteSpace(amiVoiceAPI.ProfileId))
-                    {
-                        voiceRecognizer.ConnectionParameter.Add("profileId", amiVoiceAPI.ProfileId.Trim());
-                    }
-                    if (amiVoiceAPI.FillerEnable)
-                    {
-                        voiceRecognizer.ConnectionParameter.Add("keepFillerToken", "1");
-                    }
-                //}
-                /*
-                catch (Exception ex)
-                {
-                    isRecording = false;
-                    ChangeButtonToStartRecording();
-                    Debug.WriteLine(ex);
-                    return;
-                }
-                */
-
-                captureVoice?.Dispose();
-                captureVoice = audioCaptureServiceFactory.Create(SelectedWaveInDevice);
-
-                bouyomiChan = new BouyomiChanSender(SpeechToTextSettings.BouyomiChanUri, SpeechToTextSettings.BouyomiChanPort, SelectedVoice.Tone);
-                fileWriter = new RecognizedTextToFileWriter(SpeechToTextSettings.OutputTextfilePath);
-                textSender = new TextHttpSender(TextOutputUri, httpClientFactory);
-
-                disposableWaveMaxObservable = Observable.FromEvent<EventHandler<float>, float>(
-                    h => (s, e) => h(e),
-                    h => captureVoice!.ResampledMaxValueAvailable += h,
-                    h => captureVoice!.ResampledMaxValueAvailable -= h
-                    ).Subscribe((v) => {
-                        double db = 0.0;
-                        const double refdB = 1.0;
-                        double modV = v / 32767.0;
-                        if (modV > 0)
-                        {
-                            db = 20 * Math.Log10(modV / refdB);
-                        }
-                        else
-                        {
-                            db = waveVolumeMinimum;
-                        }
-                        WaveMaxValue = db;
-                    });
-                captureVoice.StartRecording();
-                ChangeButtonToStopRecording();
-                isRecording = true;
-
-                try
-                {
-                    var ct = tokenSource.Token;
-
-                    voiceRecognizer.VoiceStart += ChangeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd += ChangeGaugeColorOff;
-
-                    disposableWaveInObservable = captureVoice.Pcm16StreamObservable.Subscribe(
-                        (b) =>
-                        {
-                            _ = voiceRecognizer?.TryFeedRawWave(b.Span);
-                        }
-                        );
-
-                    var completeObservable = Observable.FromEvent<EventHandler<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>, VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>(
-                        h => (s, e) => h(e),
-                        h =>
-                        {
-                            voiceRecognizer.Recognized += h;
-                        },
-                        h =>
-                        {
-                            voiceRecognizer.Recognized -= h;
-                        }
-                        );
-                    var progressObservable = Observable.FromEvent<EventHandler<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>, VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>(
-                        h => (s, e) => h(e),
-                        h =>
-                        {
-                            voiceRecognizer.Recognizing += h;
-                        },
-                        h =>
-                        {
-                            voiceRecognizer.Recognizing -= h;
-                        }
-                        );
-                    var observables = new List<IObservable<VoiceRecognizerWithAmiVoiceCloud.SpeechRecognitionEventArgs>> { completeObservable };
-                    disposableRecognizerRecognizeObservable = Observable.Concat(observables)
-                    .Subscribe(r =>
-                    {
-                        Debug.WriteLine(r.Text);
-                        if (String.IsNullOrEmpty(r.code))  // エラーがないならコードは空文字列
-                        {
-                            var text = r.Text;
-                            if (amiVoiceAPI.FillerEnable)
-                            {
-                                text = Regex.Replace(text, fillerPattern, @"$1");
-                                text = Regex.Replace(text, deletePattern, @"");
-                            }
-                            RecognizedText = text;
-                            _ = bouyomiChan.Send((speechToTextSettings.BouyomiChanPrefix + text).Trim());
-                            _ = fileWriter.Write(text);
-                            var textJson = new TextHttpSender.RecognizedText { text = text };
-                            _ = textSender.Send(textJson);
-                        }
-                    });
-
-                    disposableTraceObservable = Observable.FromEvent<EventHandler<string>, string>(
-                        h => (s, e) => h(e),
-                        h =>
-                        {
-                            voiceRecognizer.Trace += h;
-                        },
-                        h =>
-                        {
-                            voiceRecognizer.Trace -= h;
-                        }
-                        ).Subscribe(r => {
-                            Debug.WriteLine(r);
-                            if (!String.IsNullOrEmpty(r))
-                            {
-                                var nowText = DateTime.Now.ToShortTimeString();
-                                StatusText = String.Format("[{0}] {1}", nowText, r.Trim());
-                            }
-                        });
-
-                    disposableRecognizerErrorObservable = Observable.FromEvent<EventHandler<string>, string>(
-                        h => (s, e) => h(e),
-                        h => { voiceRecognizer.ErrorOccured += h; },
-                        h => { voiceRecognizer.ErrorOccured -= h; }
-                        )
-                    .Subscribe(err =>
-                    {
-                        StatusText = err;
-                        this.StopRecordingCommand.Execute().Subscribe();
-                    });
-
-                    disposableRecognizerStopped = Observable.FromEvent<EventHandler<bool>, bool>(
-                        h => (s, e) => h(e),
-                        h => { voiceRecognizer.RecognizeStopped += h; },
-                        h => { voiceRecognizer.RecognizeStopped += h; }
-                        )
-                    .Subscribe((r) =>
-                    {
-                        this.StopRecordingCommand.Execute().Subscribe();
-                    });
-
-                    SpeechToTextSettings.BouyomiChanPrefix = SpeechToTextSettings.BouyomiChanPrefix.Trim();
-                    voiceRecognizer.Start(ct);
-                    StatusText = "Start";
-                    EditableIsVisible = false;
-                    EditableIsEnable = false;
-                }
-                catch (Exception ex)
-                {
-                    disposableWaveInObservable?.Dispose();
-                    disposableRecognizerErrorObservable?.Dispose();
-                    disposableRecognizerRecognizeObservable?.Dispose();
-                    voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
-                    captureVoice?.Dispose();
-                    captureVoice = null;
-                    EditableIsVisible = true;
-                    EditableIsEnable = true;
-                    Debug.WriteLine(ex.Message);
-                    throw;
-                }
-            });
-
-            StopRecordingCommand = ReactiveCommand.Create(() =>
-            {
-                if (isRecording == false)
-                {
-                    ChangeButtonToStartRecording();
-                    return;
-                }
-
-                try
-                {
-                    tokenSource.Cancel();
-                    voiceRecognizer?.messageLoopTask.Wait(1000);
-                }
-                catch (TaskCanceledException)
-                {
-                }
-                finally
-                {
-                    disposableWaveInObservable?.Dispose();
-                    disposableWaveMaxObservable?.Dispose();
-                    disposableRecognizerRecognizeObservable?.Dispose();
-                    disposableRecognizerErrorObservable?.Dispose();
-                    disposableRecognizerStopped?.Dispose();
-                    disposableTraceObservable?.Dispose();
-
-                    voiceRecognizer.VoiceStart -= ChangeGaugeColorOn;
-                    voiceRecognizer.VoiceEnd -= ChangeGaugeColorOff;
-
-                    captureVoice?.StopRecording();
-                    captureVoice?.Dispose();
-                    captureVoice = null;
-
-                    ChangeGaugeColorDisable();
-
-                    ChangeButtonToStartRecording();
-                    isRecording = false;
-                    WaveMaxValue = waveVolumeMinimum;
-
-                }
-            });
-
-            ChangeButtonToStartRecording();
-            isRecording = false;
-            EditableIsVisible = true;
-            EditableIsEnable = true;
+            settingsStore.SaveRuntimeOptions(BuildRuntimeOptions());
         }
     }
 }

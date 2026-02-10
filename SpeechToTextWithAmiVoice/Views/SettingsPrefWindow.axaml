@@ -6,45 +6,55 @@
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
         x:Class="SpeechToTextWithAmiVoice.SettingsPrefWindow"
         x:DataType="vm:SettingsPrefViewModel"
-        Title="SettingsPrefWindow">
-  <Border Margin="10">
-    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition SharedSizeGroup="Label" Width="Auto"/>
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="30"></RowDefinition>
-          <RowDefinition Height="30"></RowDefinition>
-          <RowDefinition Height="30"></RowDefinition>
-          <RowDefinition Height="30"></RowDefinition>
-        </Grid.RowDefinitions>
-
-        <Label Grid.Column="0" Grid.Row="0">Authenticate</Label>
-        <DockPanel Grid.Column="1" Grid.Row="0">
-          <RadioButton Content="ENV Var" />
-          <RadioButton Content="App Key" />
-        </DockPanel>
-        
-        <Label Grid.Column="0" Grid.Row="1">App Key</Label>
-        <TextBox Grid.Column="1" Grid.Row="1" AcceptsReturn="False" Watermark="Amivoice APP Key"></TextBox>
-        
-        <Label Grid.Column="0" Grid.Row="2">Text POST URL</Label>
-        <TextBox Grid.Column="1" Grid.Row="2" Watermark="Text POST Url"></TextBox>
-
-        <Label Grid.Column="0" Grid.Row="3">BouyomiChan Address</Label>
-        <DockPanel Grid.Column="1" Grid.Row="3" HorizontalAlignment="Left" LastChildFill="True">
-          <TextBox DockPanel.Dock="Right" MinWidth="80" Watermark="Port" />
-          <Label DockPanel.Dock="Right" HorizontalAlignment="Right">:</Label>
-          <TextBox Watermark="IP" DockPanel.Dock="Left" HorizontalAlignment="Stretch" MinWidth="200"></TextBox>
-        </DockPanel>
-
-      </Grid>
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20" Spacing="20">
-        <Button Width="60">OK</Button>
-        <Button Width="60">Cancel</Button>
+        Title="Connection Settings"
+        Width="760"
+        Height="420">
+  <Border Margin="12">
+    <DockPanel LastChildFill="True">
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0" Spacing="12">
+        <Button Width="120" Height="32" Command="{Binding SaveCommand}">Save</Button>
+        <Button Width="120" Height="32" Command="{Binding CancelCommand}">Cancel</Button>
       </StackPanel>
-    </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock FontSize="18" FontWeight="Bold">AmiVoice Connection</TextBlock>
+        <TextBlock>WebSocket URI</TextBlock>
+        <TextBox Text="{Binding WebSocketUri, Mode=TwoWay}" />
+
+        <TextBlock>API Key</TextBlock>
+        <TextBox Text="{Binding ApiKey, Mode=TwoWay}" />
+
+        <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Output: HTTP POST</TextBlock>
+        <TextBlock>HTTP POST URI</TextBlock>
+        <TextBox Text="{Binding HttpPostUri, Mode=TwoWay}" />
+
+        <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Output: Bouyomi-chan</TextBlock>
+        <Grid ColumnDefinitions="2*,120,*" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0">Host</TextBlock>
+          <TextBox Grid.Row="0" Grid.Column="0" Margin="80,0,8,0" Text="{Binding BouyomiHost, Mode=TwoWay}" />
+
+          <TextBlock Grid.Row="0" Grid.Column="1" Margin="8,0,0,0">Port</TextBlock>
+          <TextBox Grid.Row="0" Grid.Column="2" Margin="8,0,0,0" Text="{Binding BouyomiPort, Mode=TwoWay}" />
+
+          <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,8,0,0">Prefix</TextBlock>
+          <TextBox Grid.Row="1" Grid.Column="0" Margin="80,8,8,0" Text="{Binding BouyomiPrefix, Mode=TwoWay}" />
+
+          <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,8,0,0">Voice</TextBlock>
+          <ComboBox Grid.Row="2" Grid.Column="0"
+                    Margin="80,8,8,0"
+                    ItemsSource="{Binding BouyomiVoiceItems}"
+                    SelectedItem="{Binding SelectedVoice}"
+                    HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+
+        <TextBlock Margin="0,8,0,0" Text="{Binding StatusText}" />
+      </StackPanel>
+    </DockPanel>
   </Border>
 </Window>

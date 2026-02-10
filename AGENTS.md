@@ -6,8 +6,8 @@
 ## Top-Level Policy
 - Do not prioritize a "complete migration" by itself.
 - Prioritize satisfying the actual user need with the minimum necessary implementation.
-- It is acceptable to break backward compatibility with the existing Avalonia app when needed.
-- Favor direct in-place refactoring of the main codebase over maintaining parallel legacy-compatible implementations.
+- Parallel development of MAUI and Avalonia is currently required.
+- For shared changes, prefer implementations that keep both frontends functional unless explicitly waived.
 
 ## Canonical User Need (Shared Across Sessions)
 - Capture microphone audio input.
@@ -19,23 +19,27 @@
 ## Success Criteria (Definition of Done)
 - The end-to-end flow above works reliably.
 - Optional outputs (HTTP POST and Bouyomi-chan) are only required when enabled/configured.
-- This app-level user need is considered satisfied even if some non-essential UI/feature parity with Avalonia is not fully migrated.
+- This app-level user need must remain satisfiable on the actively shipped frontend(s), currently including Avalonia.
 
 ## Non-Goals (Unless Explicitly Requested)
 - Perfect one-to-one UI parity with Avalonia.
 - Porting all legacy settings screens and dormant features.
 - Implementing unsupported platforms before the core user need works on target platform(s).
-- Preserving Avalonia-side API/class compatibility during large refactors.
+- Preserving every legacy API/class shape when it blocks progress.
 
 ## Refactoring Direction
 - For major cleanup, prioritize a full app-level refactor path.
-- Do not keep compatibility shims solely for Avalonia unless explicitly requested.
+- Compatibility layers between MAUI and Avalonia are acceptable when they reduce duplicated logic and keep both apps operational.
 - Redesign unstable components (for example `VoiceRecognizerWithAmiVoiceCloud`) with clear boundaries, even if that requires breaking old interfaces.
 
 ## Project Structure
-- `SpeechToTextWithAmiVoice/`: existing Avalonia implementation (reference baseline).
-- `SpeechToTextAmiVoiceMAUI/`: MAUI implementation target.
+- `SpeechToTextWithAmiVoice/`: Avalonia implementation (parallel development target).
+- `SpeechToTextAmiVoiceMAUI/`: MAUI implementation (parallel development target).
 - `SpeechToText.Core/`: shared domain/application logic used by both projects.
+
+## Current Delivery Constraint
+- MAUI self-contained single-file publish (`PublishSingleFile`) is currently unreliable in this project context.
+- Until this constraint is resolved, Avalonia must continue to be developed and kept releasable in parallel.
 
 ## Current Canonical Architecture (MAUI + Core)
 - `SpeechToText.Core/VoiceRecognizerWithAmiVoiceCloud.cs` is the public recognizer facade.
@@ -88,6 +92,6 @@
 - Existing core tests (including reconnect/audio-feed behavior) must stay passing when refactoring.
 
 ## Context To Drop In Future Sessions
-- Do not re-open the old "full Avalonia parity migration" plan unless explicitly requested.
 - Do not revert to monolithic `MainPageViewModel` with direct infra handling.
 - Do not reintroduce direct `Preferences` access in multiple UI layers.
+- Do not assume "MAUI-only deliverable" while the MAUI single-file publish issue remains unresolved.

@@ -1,26 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.20348.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <Nullable>annotations</Nullable>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.7" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.7" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.7" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.7" />
-    <PackageReference Include="Avalonia.Themes.Simple" Version="11.3.7" />
+    <PackageReference Include="1llum1n4t1s.NAudio" Version="1.0.30" />
+    <PackageReference Include="Avalonia" Version="11.3.11" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.11" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
+    <PackageReference Include="Avalonia.Themes.Simple" Version="11.3.11" />
     <PackageReference Include="CircularBuffer" Version="1.4.0" />
     <PackageReference Include="Macross.Json.Extensions" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Messages\" />
@@ -29,7 +30,7 @@
     <ProjectReference Include="..\SpeechToText.Core\SpeechToText.Core.csproj" />
   </ItemGroup>
   <Target Name="CopyReadmeAndLicenseAfterPublish" AfterTargets="Publish">
-    <Copy SourceFiles="$(SolutionDir)\README.md" DestinationFolder="$(PublishDir)" />
-    <Copy SourceFiles="$(SolutionDir)\LICENSE.txt" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="$(ProjectDir)\..\README.md" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="$(ProjectDir)\..\LICENSE.txt" DestinationFolder="$(PublishDir)" />
   </Target>
 </Project>
