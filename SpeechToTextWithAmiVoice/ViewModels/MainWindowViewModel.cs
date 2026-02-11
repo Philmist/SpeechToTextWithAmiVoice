@@ -1,21 +1,22 @@
-﻿using ReactiveUI;
+﻿using Microsoft.Extensions.DependencyInjection;
+using ReactiveUI;
+using System;
+using System.Net.Http;
 
 namespace SpeechToTextWithAmiVoice.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    class MainWindowViewModel : ViewModelBase
     {
-        public string Greeting => "Welcome to Avalonia!";
-
-        ViewModelBase content;
+        private ViewModelBase content;
         public ViewModelBase Content
         {
             get => content;
             private set => this.RaiseAndSetIfChanged(ref content, value);
         }
 
-        public MainWindowViewModel()
+        public MainWindowViewModel(SpeechToTextViewModel vm)
         {
-            Content = new SpeechToTextViewModel();
+            Content = vm;
         }
     }
 }

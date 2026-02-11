@@ -6,28 +6,25 @@
 
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
+using SpeechToText.Core;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reactive.Linq;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SpeechToTextWithAmiVoice
 {
-    class CaptureVoiceFromWasapi
+    sealed class CaptureVoiceFromWasapi : IAudioCaptureService
     {
-
-        private MMDevice CaptureTargetDevice;
-        private WasapiCapture capture;
+        private readonly MMDevice captureTargetDevice;
+        private readonly WasapiCapture capture;
+        private readonly AudioMeterInformation audioMeterInformation;
 
         public readonly WaveFormat TargetWaveFormat;
 
-        public event EventHandler<byte[]> ResampledDataAvailable;
+        public event EventHandler<ReadOnlyMemory<byte>> ResampledDataAvailable;
         public event EventHandler<float> ResampledMaxValueAvailable;
 
-        public IObservable<byte[]> Pcm16StreamObservable { get; }
+        public IObservable<ReadOnlyMemory<byte>> Pcm16StreamObservable { get; }
 
         /// <summary>
         /// Event handler to capture waspi devic.
@@ -36,18 +33,19 @@ namespace SpeechToTextWithAmiVoice
         /// <param name="eventArgs"></param>
         private void WaspiDataAvailable(object sender, WaveInEventArgs eventArgs)
         {
+            var data = new ReadOnlyMemory<byte>(eventArgs.Buffer, 0, eventArgs.BytesRecorded);
+            /*
             if (eventArgs.BytesRecorded == 0)
             {
-                ResampledDataAvailable?.Invoke(this, new byte[0]);
-                ResampledMaxValueAvailable?.Invoke(this, 0);
+                ResampledDataAvailable?.Invoke(this, new ReadOnlyMemory<byte>());
                 return;
             }
+            */
 
-            var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
-            ResampledDataAvailable?.Invoke(this, recordedAry);
+            //var recordedAry = eventArgs.Buffer[new Range(0, eventArgs.BytesRecorded)];
+            ResampledDataAvailable?.Invoke(this, data);
 
-            var volumeBuffer = new WaveBuffer(recordedAry);
-            var maxVolume = (float)volumeBuffer.ShortBuffer[new Range(0, recordedAry.Length / 2)].Max((v) => { return ((double)v < 0.0) ? (-1.0 * (double)v) : (double)v; });
+            float maxVolume = audioMeterInformation.MasterPeakValue;
             ResampledMaxValueAvailable?.Invoke(this, maxVolume);
 
         }
@@ -61,8 +59,8 @@ namespace SpeechToTextWithAmiVoice
                 throw new ArgumentException("Device does not have capture capatibity");
             }
 
-            CaptureTargetDevice = device;
-            capture = new WasapiCapture(CaptureTargetDevice);
+            captureTargetDevice = device;
+            capture = new WasapiCapture(captureTargetDevice);
             capture.ShareMode = AudioClientShareMode.Shared;
             capture.WaveFormat = TargetWaveFormat;
 
@@ -71,11 +69,12 @@ namespace SpeechToTextWithAmiVoice
             Debug.WriteLine(device.DeviceFriendlyName);
 
             capture.DataAvailable += WaspiDataAvailable;
-            Pcm16StreamObservable = Observable.FromEvent<EventHandler<byte[]>, byte[]>(
+            Pcm16StreamObservable = Observable.FromEvent<EventHandler<ReadOnlyMemory<byte>>, ReadOnlyMemory<byte>>(
                 h => (s, e) => h(e),
                 h => ResampledDataAvailable += h,
                 h => ResampledDataAvailable -= h
                 );
+            audioMeterInformation = captureTargetDevice.AudioMeterInformation;
         }
 
         public void StartRecording()
@@ -88,5 +87,10 @@ namespace SpeechToTextWithAmiVoice
             capture.StopRecording();
         }
 
+        public void Dispose()
+        {
+            capture.DataAvailable -= WaspiDataAvailable;
+            capture.Dispose();
+        }
     }
 }

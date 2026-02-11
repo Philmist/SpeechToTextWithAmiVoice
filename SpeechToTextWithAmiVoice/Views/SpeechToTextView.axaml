@@ -1,123 +1,118 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:SpeechToTextWithAmiVoice;assembly=SpeechToTextWithAmiVoice"
              xmlns:vm="clr-namespace:SpeechToTextWithAmiVoice.ViewModels;assembly=SpeechToTextWithAmiVoice"
              mc:Ignorable="d"
              x:Class="SpeechToTextWithAmiVoice.Views.SpeechToTextView"
-             x:DataType="vm:SpeechToTextViewModel"
-             >
-  <UserControl.Resources>
-    <local:DoubleToDateTimeDeltaStringConverter x:Key="d2dtdConverter" />
-  </UserControl.Resources>
-  <UserControl.Styles>
-    <Style Selector="Border.Main">
-      <Setter Property="Padding" Value="2"/>
-      <Setter Property="Margin" Value="2"/>
-    </Style>
-    <Style Selector="TextBox">
-      <Setter Property="FontFamily" Value="Meiryo, GlobalUserInterface.CompositeFont" />
-    </Style>
-    <Style Selector="TextBlock.ReconizedText">
-      <Setter Property="FontSize" Value="24" />
-    </Style>
-  </UserControl.Styles>
-  <Border Classes="Main">
-    <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" LastChildFill="True">
-      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">WebSocket URL</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.WebSocketURI, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">API Key</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.AppKey, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}" IsVisible="{Binding EditableIsVisible}"/>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Profile ID</TextBlock>
-        <TextBox Text="{Binding AmiVoiceAPI.ProfileId, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="NoWrap" IsEnabled="{Binding EditableIsEnable}"/>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Filler Enable</TextBlock>
-        <CheckBox IsChecked="{Binding AmiVoiceAPI.FillerEnable, Mode=TwoWay}" IsThreeState="False" IsEnabled="{Binding EditableIsEnable}"/>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" Height="30" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left" VerticalAlignment="Center">Audio IN</TextBlock>
-        <ComboBox ItemsSource="{Binding Path=WaveInDeviceItems}" SelectedItem="{Binding SelectedWaveInDevice}" IsEnabled="{Binding EditableIsEnable}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding FriendlyName}" />
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-      </DockPanel>
-      <DockPanel DockPanel.Dock="Top">
-        <TextBlock Width="100" VerticalAlignment="Center">FilePath</TextBlock>
-        <TextBox Text="{Binding SpeechToTextSettings.OutputTextfilePath}" MinWidth="200" IsEnabled="{Binding EditableIsEnable}"/>
-        <Button DockPanel.Dock="Right" Command="{Binding OnClickFileSelectButtonCommand}" IsEnabled="{Binding EditableIsEnable}">Select</Button>
-      </DockPanel>
-      <!--
-      <StackPanel DockPanel.Dock="Top">
-        <DockPanel>
-          <TextBlock Width="100" VerticalAlignment="Center" DockPanel.Dock="Left">Clearing</TextBlock>
-          <CheckBox Name="OutputClearingCheckbox" IsThreeState="False" IsChecked="{Binding SpeechToTextSettings.OutputClearingIsEnabled}"/>
+             x:DataType="vm:SpeechToTextViewModel">
+  <Border Margin="8" Padding="4">
+    <DockPanel LastChildFill="True">
+      <StackPanel DockPanel.Dock="Top" Spacing="8">
+        <TextBlock FontSize="18" FontWeight="Bold">Runtime Options</TextBlock>
+
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Engine</TextBlock>
+          <ComboBox ItemsSource="{Binding AmiVoiceEngineItems}"
+                    SelectedItem="{Binding SelectedEngine}"
+                    IsEnabled="{Binding CanEditSettings}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding FriendlyName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
         </DockPanel>
-        <DockPanel>
-          <TextBlock Text="{Binding #OutputClearingSecondsSlider.Value, Mode=OneWay, Converter={StaticResource d2dtdConverter}}" Width="100"/>
-          <Slider
-            Name="OutputClearingSecondsSlider"
-            Minimum="0"
-            Maximum="90"
-            Value="{Binding SpeechToTextSettings.OutputClearingSeconds}"
-            IsEnabled="{Binding #OutputClearingCheckbox.IsChecked}"
-            TickFrequency="1.0"
-            LargeChange="5.0"
-            IsSnapToTickEnabled="True"
-        />
+
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Profile ID</TextBlock>
+          <TextBox Text="{Binding ProfileId, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
         </DockPanel>
+
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Filler Enable</TextBlock>
+          <CheckBox IsChecked="{Binding FillerEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+        </DockPanel>
+
+        <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Output Toggles</TextBlock>
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Enable HTTP POST</TextBlock>
+          <CheckBox IsChecked="{Binding EnableHttpPost, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+        </DockPanel>
+
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Enable Bouyomi</TextBlock>
+          <CheckBox IsChecked="{Binding EnableBouyomi, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+        </DockPanel>
+
+        <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Audio Input</TextBlock>
+        <DockPanel VerticalAlignment="Center">
+          <TextBlock Width="120" VerticalAlignment="Center">Device</TextBlock>
+          <ComboBox ItemsSource="{Binding WaveInDeviceItems}"
+                    SelectedItem="{Binding SelectedWaveInDevice}"
+                    IsEnabled="{Binding CanEditSettings}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding FriendlyName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </DockPanel>
+
+        <Button Width="140"
+                HorizontalAlignment="Left"
+                IsEnabled="{Binding CanEditSettings}"
+                Command="{Binding RefreshDevicesCommand}">
+          Refresh Devices
+        </Button>
       </StackPanel>
-      -->
-      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left">BouyomiChan</TextBlock>
-        <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
-          <TextBox Watermark="Port" MinWidth="80" Text="{Binding SpeechToTextSettings.BouyomiChanPort}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsEnabled="{Binding EditableIsEnable}"/>
-          <TextBlock DockPanel.Dock="Right">:</TextBlock>
-          <TextBox Watermark="Prefix" MinWidth="100" Text="{Binding SpeechToTextSettings.BouyomiChanPrefix}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
-          <TextBox Watermark="Address" MinWidth="200" Text="{Binding SpeechToTextSettings.BouyomiChanUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
+
+      <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,12,0,0">
+        <DockPanel>
+          <Button Width="180"
+                  Height="36"
+                  DockPanel.Dock="Left"
+                  Command="{Binding ToggleRecordingCommand}">
+            <TextBlock Text="{Binding RecordButtonText}" />
+          </Button>
+          <Button Width="140"
+                  Height="36"
+                  Margin="12,0,0,0"
+                  DockPanel.Dock="Left"
+                  IsEnabled="{Binding CanEditSettings}"
+                  Command="{Binding OpenSettingsCommand}">
+            Connection Settings
+          </Button>
         </DockPanel>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top" Height="30">
-        <TextBlock Width="100" DockPanel.Dock="Left">BCVoice</TextBlock>
-        <ComboBox ItemsSource="{Binding BouyomiChanVoiceItems}" SelectedItem="{Binding SelectedVoice}" IsEnabled="{Binding EditableIsEnable}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" DockPanel.Dock="Top">
-        <TextBlock Width="100" DockPanel.Dock="Left">TextSend Uri</TextBlock>
-        <DockPanel DockPanel.Dock="Left" HorizontalAlignment="Stretch" LastChildFill="True">
-          <TextBox Watermark="HTTP URI" MinWidth="300" Text="{Binding TextOutputUri}" DockPanel.Dock="Left" HorizontalAlignment="Stretch" IsEnabled="{Binding EditableIsEnable}"/>
-        </DockPanel>
-      </DockPanel>
-      <DockPanel DockPanel.Dock="Bottom">
-        <Button Content="{Binding RecordButtonText}" Command="{Binding OnClickRecordButtonCommand}"/>
-      </DockPanel>
-      <DockPanel DockPanel.Dock="Bottom" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-        <ProgressBar Background="{Binding WaveGaugeColor}"  Maximum="5" Minimum="-100" Value="{Binding WaveMaxValue}" Padding="2" Margin="2"/>
-      </DockPanel>
-      <DockPanel VerticalAlignment="Stretch" DockPanel.Dock="Bottom" >
-        <Border BorderBrush="Black" BorderThickness="2" Margin="2" DockPanel.Dock="Bottom">
-          <TextBlock Text="{Binding StatusText, Mode=OneWay}" />
+
+        <ProgressBar Maximum="0"
+                     Minimum="-100"
+                     Value="{Binding WaveMaxValue}" />
+
+        <TextBlock FontWeight="Bold">Status</TextBlock>
+        <Border BorderBrush="Black" BorderThickness="1" Padding="6">
+          <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
         </Border>
-        <Border BorderBrush="Black" BorderThickness="1" Margin="2" DockPanel.Dock="Top">
+
+        <TextBlock FontWeight="Bold">Metrics</TextBlock>
+        <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0">Connection Established Count</TextBlock>
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionEstablishedCount}" />
+          <TextBlock Grid.Row="1" Grid.Column="0">Last Disconnect Reason</TextBlock>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LastDisconnectReason}" />
+          <TextBlock Grid.Row="2" Grid.Column="0">Last Recognized At</TextBlock>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LastRecognizedAt}" />
+          <TextBlock Grid.Row="3" Grid.Column="0">Dropped Backpressure Count</TextBlock>
+          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DroppedBackpressureCount}" />
+        </Grid>
+
+        <TextBlock FontWeight="Bold">Recognized Text</TextBlock>
+        <Border BorderBrush="Black" BorderThickness="1" Padding="8">
           <Viewbox Stretch="Uniform">
-            <TextBlock Text="{Binding RecognizedText, Mode=OneWay}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" Classes="RecognizedText" FontSize="24"/>
+            <TextBlock Text="{Binding RecognizedText}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" FontSize="24" />
           </Viewbox>
         </Border>
-      </DockPanel>
+      </StackPanel>
     </DockPanel>
   </Border>
 </UserControl>

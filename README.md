@@ -6,7 +6,6 @@
 
 - Avalonia ( https://avaloniaui.net/ )
 - AmiVoice Cloud Platform ( https://acp.amivoice.com/main/ )
-- Rx.NET ( https://github.com/dotnet/reactive )
 - NAudio ( https://github.com/naudio/NAudio )
 
 エラー処理はほとんどなされていないので検証用と割りきっていただけると幸いです。
@@ -33,18 +32,10 @@ Profile IDは`:hogehuga`と設定してください。
 棒読みちゃん側で通常のSocketでの入力を有効化してアドレスとポートを該当箇所に入力してください。
 初期状態は棒読みちゃんのデフォルトの設定になっています。
 
-いくつかの方法でOBSに字幕を表示することが出来ます。
-
-FilePathにテキストファイルを指定し、
-OBS側のテキストソースで該当テキストファイルを入力として指定することで、
-字幕を表示させることが出来ます。
-
-もしくはTextSend UriにHTTP POSTで受けたいアドレスを指定すると、
+TextSend UriにHTTP POSTで受けたいアドレスを指定すると、
 そのアドレスに対してJSONを送信します。
 具体的には`{"code": "R", "text": "認識したテキスト" }`のようなJSONが投げられます。
-こちらはnodecgで使いたい方向けです。
-
-いずれの方法も一度失敗した場合は一度認識を止めて再スタートするまでは処理が飛ばされます。
+nodecgで使いたい方向けの仕様です。
 
 ## その他
 

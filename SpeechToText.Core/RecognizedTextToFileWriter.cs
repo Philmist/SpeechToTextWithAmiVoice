@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace SpeechToTextWithAmiVoice
+namespace SpeechToText.Core
 {
-    class RecognizedTextToFileWriter
+    public class RecognizedTextToFileWriter
     {
         public bool isEnable { get; protected set; }
         public string FilePath { get; protected set; }

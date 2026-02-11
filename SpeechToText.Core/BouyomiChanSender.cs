@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
@@ -7,9 +7,9 @@ using System.Net.Sockets;
 using System.Diagnostics;
 
 
-namespace SpeechToTextWithAmiVoice
+namespace SpeechToText.Core
 {
-    class BouyomiChanSender
+    public class BouyomiChanSender
     {
         public const byte Charset = 0;
         public Int16 Voice = 1;  //  0:棒読みちゃん画面上の設定、1:女性1、2:女性2、3:男性1、4:男性2、5:中性、6:ロボット、7:機械1、8:機械2、10001～:SAPI5）
