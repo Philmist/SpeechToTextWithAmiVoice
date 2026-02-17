@@ -8,7 +8,7 @@
              x:DataType="vm:SpeechToTextViewModel">
   <Border Margin="8" Padding="4">
     <DockPanel LastChildFill="True">
-      <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <StackPanel DockPanel.Dock="Top" Spacing="2">
         <TextBlock FontSize="18" FontWeight="Bold">Runtime Options</TextBlock>
 
         <DockPanel VerticalAlignment="Center">
@@ -36,13 +36,15 @@
 
         <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Output Toggles</TextBlock>
         <DockPanel VerticalAlignment="Center">
-          <TextBlock Width="120" VerticalAlignment="Center">Enable HTTP POST</TextBlock>
-          <CheckBox IsChecked="{Binding EnableHttpPost, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
-        </DockPanel>
+          <DockPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Width="120" VerticalAlignment="Center">HTTP POST</TextBlock>
+            <CheckBox IsChecked="{Binding EnableHttpPost, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+          </DockPanel>
 
-        <DockPanel VerticalAlignment="Center">
-          <TextBlock Width="120" VerticalAlignment="Center">Enable Bouyomi</TextBlock>
-          <CheckBox IsChecked="{Binding EnableBouyomi, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+          <DockPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Width="120" VerticalAlignment="Center">Bouyomi</TextBlock>
+            <CheckBox IsChecked="{Binding EnableBouyomi, Mode=TwoWay}" IsEnabled="{Binding CanEditSettings}" />
+          </DockPanel>
         </DockPanel>
 
         <TextBlock Margin="0,8,0,0" FontSize="16" FontWeight="Bold">Audio Input</TextBlock>
@@ -67,16 +69,16 @@
         </Button>
       </StackPanel>
 
-      <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,12,0,0">
+      <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,12,0,0">
         <DockPanel>
           <Button Width="180"
-                  Height="36"
+                  Height="28"
                   DockPanel.Dock="Left"
                   Command="{Binding ToggleRecordingCommand}">
             <TextBlock Text="{Binding RecordButtonText}" />
           </Button>
           <Button Width="140"
-                  Height="36"
+                  Height="28"
                   Margin="12,0,0,0"
                   DockPanel.Dock="Left"
                   IsEnabled="{Binding CanEditSettings}"
@@ -90,28 +92,28 @@
                      Value="{Binding WaveMaxValue}" />
 
         <TextBlock FontWeight="Bold">Status</TextBlock>
-        <Border BorderBrush="Black" BorderThickness="1" Padding="6">
+        <Border BorderBrush="Black" BorderThickness="1" Padding="2">
           <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
         </Border>
-
-        <TextBlock FontWeight="Bold">Metrics</TextBlock>
-        <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto,Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0">Connection Established Count</TextBlock>
-          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionEstablishedCount}" />
-          <TextBlock Grid.Row="1" Grid.Column="0">Last Disconnect Reason</TextBlock>
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LastDisconnectReason}" />
-          <TextBlock Grid.Row="2" Grid.Column="0">Last Recognized At</TextBlock>
-          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LastRecognizedAt}" />
-          <TextBlock Grid.Row="3" Grid.Column="0">Dropped Backpressure Count</TextBlock>
-          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DroppedBackpressureCount}" />
-        </Grid>
-
+        
         <TextBlock FontWeight="Bold">Recognized Text</TextBlock>
         <Border BorderBrush="Black" BorderThickness="1" Padding="8">
-          <Viewbox Stretch="Uniform">
-            <TextBlock Text="{Binding RecognizedText}" TextWrapping="Wrap" Width="{Binding $parent[2].Bounds.Width}" FontSize="24" />
-          </Viewbox>
+            <TextBlock Text="{Binding RecognizedText}" TextWrapping="Wrap" FontSize="12" />
         </Border>
+
+        <Expander Header="Metrics">
+          <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0">Connection Established Count</TextBlock>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionEstablishedCount}" />
+            <TextBlock Grid.Row="1" Grid.Column="0">Last Disconnect Reason</TextBlock>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LastDisconnectReason}" />
+            <TextBlock Grid.Row="2" Grid.Column="0">Last Recognized At</TextBlock>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LastRecognizedAt}" />
+            <TextBlock Grid.Row="3" Grid.Column="0">Dropped Backpressure Count</TextBlock>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DroppedBackpressureCount}" />
+          </Grid>
+        </Expander>
+        
       </StackPanel>
     </DockPanel>
   </Border>

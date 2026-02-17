@@ -46,6 +46,7 @@ namespace SpeechToText.Core
             catch (Exception ex)
             {
                 LastErrorString = ex.Message;
+                Debug.WriteLine("BouyomiChanSender: {0}", LastErrorString);
                 isEnable = false;
                 return false;
             }
@@ -72,7 +73,7 @@ namespace SpeechToText.Core
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Debug.WriteLine("BouyomiChanSender: {0}", ex.Message);
                 isEnable = false;
                 return false;
             }

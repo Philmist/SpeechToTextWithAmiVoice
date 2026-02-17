@@ -3,6 +3,7 @@ using NSubstitute;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace SpeechToText.Core.Tests;
 
@@ -49,7 +50,9 @@ public class TextHttpSenderTests
         requestMethod.Should().Be(HttpMethod.Post);
         requestUri.Should().Be(new Uri(destinationUri));
         requestBody.Should().NotBeNull();
-        requestBody.Should().Be("{}");
+        var jsonNode = JsonNode.Parse(requestBody);
+        jsonNode.Should().HaveProperty("text").Which.ToString().Should().Be("hello");
+        jsonNode.Should().HaveProperty("code").Which.ToString().Should().Be("R");
         httpClientFactory.Received(1).CreateClient();
     }
 

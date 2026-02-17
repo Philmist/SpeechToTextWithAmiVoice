@@ -17,8 +17,8 @@ namespace SpeechToText.Core
     {
         public class RecognizedText
         {
-            public string code = "R";
-            public string text = "";
+            public string code { get; set; } = "R";
+            public string text { get; set; } = "";
         }
 
         public string Uri { get; protected set; } = "";
